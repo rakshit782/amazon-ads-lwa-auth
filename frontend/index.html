@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Ads Authentication</title>
+    <title>Amazon Ads Automation Platform</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
         <!-- Login Section -->
         <div id="loginSection" class="section">
             <div class="card">
-                <h1>Amazon Ads Manager</h1>
+                <h1>🚀 Amazon Ads Automation</h1>
                 <p class="subtitle">Connect your Amazon Advertising account</p>
                 
                 <form id="loginForm">
@@ -29,9 +29,9 @@
                         <label for="marketplace">Select Marketplace</label>
                         <select id="marketplace" required>
                             <option value="">Choose marketplace...</option>
-                            <option value="NA">North America (US, CA, MX)</option>
-                            <option value="EU">Europe (UK, DE, FR, IT, ES)</option>
-                            <option value="FE">Far East (JP, AU, IN, SG)</option>
+                            <option value="NA">🇺🇸 North America (US, CA, MX)</option>
+                            <option value="EU">🇪🇺 Europe (UK, DE, FR, IT, ES)</option>
+                            <option value="FE">🌏 Far East (JP, AU, IN, SG)</option>
                         </select>
                     </div>
                     
@@ -51,27 +51,38 @@
         <div id="dashboardSection" class="section" style="display: none;">
             <div class="card">
                 <div class="dashboard-header">
-                    <h1>Amazon Ads Dashboard</h1>
-                    <button id="logoutBtn" class="btn-secondary">Logout</button>
+                    <h1>📊 Amazon Ads Dashboard</h1>
+                    <div class="header-actions">
+                        <button id="autoSyncBtn" class="btn-primary">🔄 Auto Sync</button>
+                        <button id="logoutBtn" class="btn-secondary">Logout</button>
+                    </div>
                 </div>
                 
                 <div id="userInfo" class="user-info"></div>
                 
-                <div class="dashboard-actions">
-                    <button id="fetchProfilesBtn" class="btn-action">Fetch Profiles</button>
-                    <button id="fetchCampaignsBtn" class="btn-action">Fetch Campaigns</button>
-                    <button id="fetchAdGroupsBtn" class="btn-action">Fetch Ad Groups</button>
-                    <button id="fetchKeywordsBtn" class="btn-action">Fetch Keywords</button>
-                    <button id="fetchAudiencesBtn" class="btn-action btn-special">Fetch Audiences</button>
-                    <button id="autoSyncBtn" class="btn-primary">Auto Sync All Data</button>
+                <!-- Metrics Summary -->
+                <div id="metricsSection" class="metrics-section"></div>
+                
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="campaigns">🎯 Campaigns</button>
+                    <button class="tab-btn" data-tab="adgroups">📋 Ad Groups</button>
+                    <button class="tab-btn" data-tab="keywords">🔑 Keywords</button>
+                    <button class="tab-btn" data-tab="audiences">👥 Audiences</button>
+                    <button class="tab-btn" data-tab="alerts">🔔 Alerts</button>
                 </div>
                 
-                <div id="dataDisplay" class="data-display"></div>
+                <!-- Tab Content -->
+                <div id="tabContent" class="tab-content">
+                    <div id="dataDisplay" class="data-display"></div>
+                </div>
             </div>
         </div>
         
         <!-- Error Display -->
         <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <!-- Success Display -->
+        <div id="successMessage" class="success-message" style="display: none;"></div>
     </div>
 
     <script src="js/auth.js"></script>
