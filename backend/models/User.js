@@ -107,6 +107,16 @@ class User {
     return result.rows[0];
   }
 
+  // Update profile
+  static async updateProfile(id, updates) {
+    const { name } = updates;
+    const result = await query(
+      'UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [name, id]
+    );
+    return result.rows[0];
+  }
+
   // Get public profile (without sensitive data)
   static async getPublicProfile(id) {
     const result = await query(
@@ -131,6 +141,27 @@ class User {
     const result = await query(
       'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
       [hashedPassword, id]
+    );
+    return result.rows[0];
+  }
+
+  // Disconnect Amazon account
+  static async disconnectAmazon(id) {
+    const result = await query(
+      `UPDATE users 
+       SET refresh_token = NULL, access_token = NULL, token_expiry = NULL, profile_id = NULL, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 
+       RETURNING *`,
+      [id]
+    );
+    return result.rows[0];
+  }
+
+  // Delete account (soft delete - set inactive)
+  static async deleteAccount(id) {
+    const result = await query(
+      'UPDATE users SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
+      [id]
     );
     return result.rows[0];
   }
