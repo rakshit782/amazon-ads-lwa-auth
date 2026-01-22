@@ -3,177 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>Login - Amazon Ads Automation</title>
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        .auth-container {
-            max-width: 450px;
-            margin: 60px auto;
-        }
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 30px;
-            border-bottom: 2px solid var(--border-color);
-        }
-        .auth-tab {
-            flex: 1;
-            padding: 15px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-light);
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .auth-tab.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-        }
-        .auth-form {
-            display: none;
-        }
-        .auth-form.active {
-            display: block;
-        }
-        .or-divider {
-            text-align: center;
-            margin: 25px 0;
-            position: relative;
-        }
-        .or-divider::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            width: 100%;
-            height: 1px;
-            background: var(--border-color);
-        }
-        .or-divider span {
-            background: var(--white);
-            padding: 0 15px;
-            position: relative;
-            z-index: 1;
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-        .amazon-login-btn {
-            background: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .password-toggle {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-        .form-group {
-            position: relative;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
         <div class="auth-container">
-            <div class="card">
-                <h1>🚀 Amazon Ads Automation</h1>
-                <p class="subtitle">Automate your Amazon advertising campaigns</p>
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>🛒 Amazon Ads Automation</h1>
+                    <p class="subtitle">Manage your campaigns efficiently</p>
+                </div>
 
-                <div class="auth-tabs">
-                    <button class="auth-tab active" data-tab="login">Login</button>
-                    <button class="auth-tab" data-tab="register">Register</button>
+                <div class="tab-container">
+                    <button class="tab-button active" onclick="showTab('login')">Login</button>
+                    <button class="tab-button" onclick="showTab('register')">Register</button>
                 </div>
 
                 <!-- Login Form -->
-                <form id="loginForm" class="auth-form active">
+                <form id="loginForm" class="auth-form tab-content active">
                     <div class="form-group">
-                        <label for="loginEmail">📧 Email</label>
-                        <input type="email" id="loginEmail" placeholder="your@email.com" required>
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="loginPassword">🔒 Password</label>
-                        <input type="password" id="loginPassword" placeholder="Enter your password" required>
-                        <span class="password-toggle" onclick="togglePassword('loginPassword')">👁️</span>
+                        <label for="loginPassword">Password</label>
+                        <div class="password-input">
+                            <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                            <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')">
+                                👁️
+                            </button>
+                        </div>
                     </div>
+
                     <button type="submit" class="btn-primary">🔐 Login</button>
                 </form>
 
                 <!-- Register Form -->
-                <form id="registerForm" class="auth-form">
+                <form id="registerForm" class="auth-form tab-content">
                     <div class="form-group">
-                        <label for="registerName">👤 Full Name</label>
-                        <input type="text" id="registerName" placeholder="John Doe" required>
+                        <label for="registerName">Full Name</label>
+                        <input type="text" id="registerName" placeholder="Enter your name" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="registerEmail">📧 Email</label>
-                        <input type="email" id="registerEmail" placeholder="your@email.com" required>
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" placeholder="Enter your email" required>
                     </div>
+
                     <div class="form-group">
-                        <label for="registerPassword">🔒 Password</label>
-                        <input type="password" id="registerPassword" placeholder="Min 6 characters" required minlength="6">
-                        <span class="password-toggle" onclick="togglePassword('registerPassword')">👁️</span>
+                        <label for="registerPassword">Password</label>
+                        <div class="password-input">
+                            <input type="password" id="registerPassword" placeholder="Min 6 characters" required minlength="6">
+                            <button type="button" class="toggle-password" onclick="togglePassword('registerPassword')">
+                                👁️
+                            </button>
+                        </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="registerMarketplace">🌍 Marketplace</label>
+                        <label for="registerMarketplace">Marketplace</label>
                         <select id="registerMarketplace" required>
-                            <option value="">Select Marketplace</option>
                             <option value="NA">North America (US, CA, MX)</option>
                             <option value="EU">Europe (UK, DE, FR, IT, ES)</option>
                             <option value="FE">Far East (JP, AU, IN)</option>
                         </select>
                     </div>
+
                     <button type="submit" class="btn-primary">📝 Register</button>
                 </form>
 
-                <div class="or-divider">
+                <div class="divider">
                     <span>OR</span>
                 </div>
 
-                <button class="btn-primary amazon-login-btn" onclick="window.location.href='index.html'">
-                    🛒 Connect Amazon Account
-                </button>
+                <a href="index.html" class="btn-secondary">
+                    🛒 Connect with Amazon Account
+                </a>
 
                 <div id="errorMessage" class="error-message" style="display: none;"></div>
                 <div id="successMessage" class="success-message" style="display: none;"></div>
-                <div id="loadingMessage" class="loading-message" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Processing...</p>
-                </div>
             </div>
         </div>
     </div>
 
+    <script src="js/auth.js"></script>
     <script>
-        const API_BASE_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000/api' 
-            : '/api';
+        const auth = new AmazonAdsAuth();
 
         // Tab switching
-        document.querySelectorAll('.auth-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabName = tab.dataset.tab;
-                
-                // Switch tabs
-                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-                
-                tab.classList.add('active');
-                document.getElementById(`${tabName}Form`).classList.add('active');
-            });
-        });
+        function showTab(tab) {
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Form').classList.add('active');
+
+            // Clear messages
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
 
         // Toggle password visibility
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            input.type = input.type === 'password' ? 'text' : 'password';
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.type = field.type === 'password' ? 'text' : 'password';
         }
 
         // Show error
@@ -181,7 +120,7 @@
             const errorMsg = document.getElementById('errorMessage');
             errorMsg.textContent = message;
             errorMsg.style.display = 'block';
-            setTimeout(() => errorMsg.style.display = 'none', 5000);
+            document.getElementById('successMessage').style.display = 'none';
         }
 
         // Show success
@@ -189,100 +128,62 @@
             const successMsg = document.getElementById('successMessage');
             successMsg.textContent = message;
             successMsg.style.display = 'block';
-            setTimeout(() => successMsg.style.display = 'none', 3000);
+            document.getElementById('errorMessage').style.display = 'none';
         }
 
-        // Login handler
+        // Login
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            
-            document.getElementById('loadingMessage').style.display = 'flex';
-            
+
             try {
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Login failed');
-                }
-                
-                // Save token
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Logging in...';
+
+                await auth.login(email, password);
                 showSuccess('Login successful! Redirecting...');
-                
-                // Redirect to dashboard
+
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
-                
             } catch (error) {
                 showError(error.message);
-            } finally {
-                document.getElementById('loadingMessage').style.display = 'none';
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '🔐 Login';
             }
         });
 
-        // Register handler
+        // Register
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const name = document.getElementById('registerName').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const marketplace = document.getElementById('registerMarketplace').value;
-            
-            if (!marketplace) {
-                showError('Please select a marketplace');
-                return;
-            }
-            
-            document.getElementById('loadingMessage').style.display = 'flex';
-            
+
             try {
-                const response = await fetch(`${API_BASE_URL}/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password, marketplace })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Registration failed');
-                }
-                
-                // Save token
-                localStorage.setItem('authToken', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = '⏳ Registering...';
+
+                await auth.register({ name, email, password, marketplace });
                 showSuccess('Registration successful! Redirecting...');
-                
-                // Redirect to dashboard
+
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 1000);
-                
             } catch (error) {
                 showError(error.message);
-            } finally {
-                document.getElementById('loadingMessage').style.display = 'none';
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📝 Register';
             }
         });
-
-        // Check if already logged in
-        if (localStorage.getItem('authToken')) {
-            window.location.href = 'dashboard.html';
-        }
     </script>
 </body>
 </html>

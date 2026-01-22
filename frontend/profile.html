@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>Profile - Amazon Ads Automation</title>
     <link rel="stylesheet" href="css/styles.css">
     <style>
@@ -89,13 +90,6 @@
                             <button type="submit" class="btn-primary">🔑 Update Password</button>
                         </div>
                     </form>
-                </div>
-
-                <!-- Danger Zone -->
-                <div class="profile-section">
-                    <h2>⚠️ Danger Zone</h2>
-                    <p style="color: var(--text-light); margin-bottom: 15px;">Once you delete your account, there is no going back. Please be certain.</p>
-                    <button id="deleteAccountBtn" class="btn-secondary" style="background: var(--danger-color); color: white;">🗑️ Delete Account</button>
                 </div>
 
                 <div id="errorMessage" class="error-message" style="display: none;"></div>

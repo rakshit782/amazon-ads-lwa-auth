@@ -3,42 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>Dashboard - Amazon Ads Automation</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="container">
-        <div class="section" id="dashboardSection">
+        <div class="dashboard-container">
+            <!-- Header -->
             <div class="card">
                 <div class="dashboard-header">
                     <div>
                         <h1>📊 Dashboard</h1>
-                        <p class="subtitle">Amazon Advertising Analytics</p>
+                        <p class="subtitle" id="welcomeMessage">Welcome back!</p>
                     </div>
                     <div class="header-actions">
-                        <button id="connectAmazonBtn" class="btn-primary" style="display: none;">🛒 Connect Amazon</button>
-                        <button id="autoSyncBtn" class="btn-primary">🔄 Auto Sync</button>
+                        <button id="syncBtn" class="btn-primary">🔄 Auto Sync</button>
+                        <button onclick="window.location.href='profile.html'" class="btn-secondary">👤 Profile</button>
                         <button id="logoutBtn" class="btn-secondary">🚪 Logout</button>
                     </div>
                 </div>
+            </div>
 
-                <div id="userInfo" class="user-info"></div>
-                
-                <div id="metricsSection" class="metrics-section"></div>
+            <!-- Metrics Cards -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">👁️</div>
+                    <div class="metric-value" id="impressions">0</div>
+                    <div class="metric-label">Impressions</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">🖱️</div>
+                    <div class="metric-value" id="clicks">0</div>
+                    <div class="metric-label">Clicks</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">💰</div>
+                    <div class="metric-value" id="spend">$0</div>
+                    <div class="metric-label">Spend</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">💵</div>
+                    <div class="metric-value" id="sales">$0</div>
+                    <div class="metric-label">Sales</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-value" id="acos">0%</div>
+                    <div class="metric-label">ACOS</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📈</div>
+                    <div class="metric-value" id="roas">0x</div>
+                    <div class="metric-label">ROAS</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">🛒</div>
+                    <div class="metric-value" id="orders">0</div>
+                    <div class="metric-label">Orders</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-icon">📋</div>
+                    <div class="metric-value" id="campaigns">0</div>
+                    <div class="metric-label">Campaigns</div>
+                </div>
+            </div>
 
+            <!-- Tabs -->
+            <div class="card">
                 <div class="tabs">
-                    <button class="tab-btn active" data-tab="campaigns">📊 Campaigns</button>
-                    <button class="tab-btn" data-tab="adgroups">📁 Ad Groups</button>
-                    <button class="tab-btn" data-tab="keywords">🔑 Keywords</button>
-                    <button class="tab-btn" data-tab="audiences">👥 Audiences</button>
-                    <button class="tab-btn" data-tab="alerts">🔔 Alerts</button>
+                    <button class="tab-btn active" onclick="showTab('campaigns')">📊 Campaigns</button>
+                    <button class="tab-btn" onclick="showTab('keywords')">🔑 Keywords</button>
+                    <button class="tab-btn" onclick="showTab('adgroups')">📁 Ad Groups</button>
+                    <button class="tab-btn" onclick="showTab('audiences')">👥 Audiences</button>
+                    <button class="tab-btn" onclick="showTab('alerts')">🔔 Alerts</button>
                 </div>
 
-                <div id="dataDisplay" class="tab-content"></div>
+                <div id="campaigns" class="tab-content active">
+                    <h3>Active Campaigns</h3>
+                    <div id="campaignsTable">Loading...</div>
+                </div>
 
-                <div id="errorMessage" class="error-message" style="display: none;"></div>
-                <div id="successMessage" class="success-message" style="display: none;"></div>
+                <div id="keywords" class="tab-content">
+                    <h3>Keywords Performance</h3>
+                    <div id="keywordsTable">Loading...</div>
+                </div>
+
+                <div id="adgroups" class="tab-content">
+                    <h3>Ad Groups</h3>
+                    <div id="adgroupsTable">Loading...</div>
+                </div>
+
+                <div id="audiences" class="tab-content">
+                    <h3>Audiences</h3>
+                    <div id="audiencesTable">Coming soon...</div>
+                </div>
+
+                <div id="alerts" class="tab-content">
+                    <h3>Alerts & Notifications</h3>
+                    <div id="alertsTable">Loading...</div>
+                </div>
             </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="successMessage" class="success-message" style="display: none;"></div>
         </div>
     </div>
 
