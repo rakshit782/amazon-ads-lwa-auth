@@ -2,7 +2,6 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const { getTokenEndpoint, getAuthEndpoint } = require('../utils/amazonAds');
 
 // Marketplace endpoints
 const MARKETPLACE_CONFIG = {
@@ -24,6 +23,16 @@ const MARKETPLACE_CONFIG = {
     tokenEndpoint: 'https://api.amazon.com/auth/o2/token',
     adsEndpoint: 'https://advertising-api-fe.amazon.com'
   }
+};
+
+// Helper function to get auth endpoint
+const getAuthEndpoint = (marketplace) => {
+  return MARKETPLACE_CONFIG[marketplace]?.authEndpoint || MARKETPLACE_CONFIG.NA.authEndpoint;
+};
+
+// Helper function to get token endpoint
+const getTokenEndpoint = (marketplace) => {
+  return MARKETPLACE_CONFIG[marketplace]?.tokenEndpoint || MARKETPLACE_CONFIG.NA.tokenEndpoint;
 };
 
 // Generate JWT token
@@ -424,4 +433,18 @@ exports.refreshAccessToken = async (req, res) => {
     console.error('❌ [REFRESH] Error:', error.response?.data || error.message);
     res.status(500).json({ error: 'Failed to refresh token' });
   }
+};
+
+module.exports = {
+  register: exports.register,
+  login: exports.login,
+  getProfile: exports.getProfile,
+  updateProfile: exports.updateProfile,
+  changePassword: exports.changePassword,
+  disconnectAmazon: exports.disconnectAmazon,
+  deleteAccount: exports.deleteAccount,
+  getAuthUrl: exports.getAuthUrl,
+  handleCallback: exports.handleCallback,
+  exchangeToken: exports.exchangeToken,
+  refreshAccessToken: exports.refreshAccessToken
 };
