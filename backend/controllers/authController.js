@@ -239,5 +239,189 @@ exports.deleteAccount = async (req, res) => {
   }
 };
 
-// ... (Keep all other Amazon OAuth methods from previous version)
-// getAuthUrl, handleCallback, exchangeToken, refreshAccessToken
+// ==================== AMAZON OAUTH ====================
+
+// Generate Amazon authorization URL
+exports.getAuthUrl = async (req, res) => {
+  try {
+    console.log('\n📝 [AUTH] Generating authorization URL...');
+    const { email, name, marketplace = 'NA' } = req.body;
+
+    if (!email || !name) {
+      console.log('❌ [AUTH] Missing required fields');
+      return res.status(400).json({ error: 'Email and name are required' });
+    }
+
+    const config = MARKETPLACE_CONFIG[marketplace];
+    const authEndpoint = getAuthEndpoint(marketplace);
+    
+    const authUrl = `${authEndpoint}?` + new URLSearchParams({
+      client_id: process.env.LWA_CLIENT_ID,
+      scope: process.env.AMAZON_ADS_API_SCOPE,
+      response_type: 'code',
+      redirect_uri: process.env.REDIRECT_URI,
+      state: JSON.stringify({ email, name, marketplace, region: config.region })
+    });
+
+    console.log('✅ [AUTH] Authorization URL generated successfully');
+    console.log('   Marketplace:', marketplace);
+    console.log('   Email:', email);
+
+    res.json({ authUrl });
+  } catch (error) {
+    console.error('❌ [AUTH] Error:', error);
+    res.status(500).json({ error: 'Failed to generate auth URL' });
+  }
+};
+
+// Handle OAuth callback
+exports.handleCallback = async (req, res) => {
+  try {
+    console.log('\n📥 [CALLBACK] OAuth callback received');
+    const { code, state } = req.query;
+
+    if (!code) {
+      console.log('❌ [CALLBACK] No authorization code received');
+      return res.redirect(`${process.env.FRONTEND_URL}/error.html?error=no_code`);
+    }
+
+    console.log('✅ [CALLBACK] Code received:', code.substring(0, 20) + '...');
+    
+    const stateData = JSON.parse(state);
+    console.log('✅ [CALLBACK] State data:', stateData);
+
+    res.redirect(`${process.env.FRONTEND_URL}/callback.html?code=${code}&state=${encodeURIComponent(state)}`);
+  } catch (error) {
+    console.error('❌ [CALLBACK] Error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/error.html?error=callback_failed`);
+  }
+};
+
+// Exchange authorization code for tokens
+exports.exchangeToken = async (req, res) => {
+  try {
+    console.log('\n🔄 [EXCHANGE] Starting token exchange...');
+    const { code, state } = req.body;
+
+    if (!code || !state) {
+      console.log('❌ [EXCHANGE] Missing code or state');
+      return res.status(400).json({ error: 'Code and state are required' });
+    }
+
+    const stateData = JSON.parse(state);
+    const { email, name, marketplace, region } = stateData;
+
+    console.log('🔄 [EXCHANGE] Calling Amazon token endpoint...');
+    const tokenEndpoint = getTokenEndpoint(marketplace);
+    
+    const tokenResponse = await axios.post(
+      tokenEndpoint,
+      new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        client_id: process.env.LWA_CLIENT_ID,
+        client_secret: process.env.LWA_CLIENT_SECRET,
+        redirect_uri: process.env.REDIRECT_URI
+      }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    console.log('✅ [EXCHANGE] Token response received from Amazon');
+    
+    const { access_token, refresh_token, expires_in } = tokenResponse.data;
+    console.log('✅ [EXCHANGE] Tokens extracted');
+
+    const tokenExpiry = new Date(Date.now() + expires_in * 1000);
+
+    console.log('🔄 [DATABASE] Checking if user exists...');
+    let user = await User.findByEmail(email);
+
+    if (user) {
+      console.log('🔄 [DATABASE] Updating existing user tokens...');
+      user = await User.updateTokens(email, refresh_token, access_token, tokenExpiry);
+    } else {
+      console.log('🔄 [DATABASE] Creating new user...');
+      user = await User.create({
+        email,
+        name,
+        marketplace,
+        region,
+        refreshToken: refresh_token,
+        accessToken: access_token,
+        tokenExpiry,
+        role: 'USER'
+      });
+    }
+
+    console.log('✅ [DATABASE] User tokens updated successfully');
+
+    const verifiedUser = await User.findByEmail(email);
+    if (verifiedUser && verifiedUser.refresh_token) {
+      console.log('✅ [VERIFY] User verified in database');
+    } else {
+      console.log('⚠️ [VERIFY] Warning: User tokens may not have saved correctly');
+    }
+
+    const token = generateJWT(user.id);
+
+    console.log('✅ [EXCHANGE] Token exchange complete!');
+    res.json({
+      success: true,
+      message: 'Successfully authenticated with Amazon',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        marketplace: user.marketplace
+      }
+    });
+  } catch (error) {
+    console.error('❌ [EXCHANGE] Error:', error.response?.data || error.message);
+    res.status(500).json({ 
+      error: 'Failed to exchange token',
+      details: error.response?.data || error.message 
+    });
+  }
+};
+
+// Refresh access token
+exports.refreshAccessToken = async (req, res) => {
+  try {
+    console.log('\n🔄 [REFRESH] Starting token refresh...');
+    const user = await User.findById(req.userId);
+
+    if (!user || !user.refresh_token) {
+      console.log('❌ [REFRESH] No refresh token found');
+      return res.status(401).json({ error: 'No refresh token available' });
+    }
+
+    const tokenEndpoint = getTokenEndpoint(user.marketplace);
+    
+    const tokenResponse = await axios.post(
+      tokenEndpoint,
+      new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: user.refresh_token,
+        client_id: process.env.LWA_CLIENT_ID,
+        client_secret: process.env.LWA_CLIENT_SECRET
+      }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    const { access_token, expires_in } = tokenResponse.data;
+    const tokenExpiry = new Date(Date.now() + expires_in * 1000);
+
+    await User.updateAccessToken(user.id, access_token, tokenExpiry);
+
+    console.log('✅ [REFRESH] Access token refreshed successfully');
+    res.json({ 
+      success: true,
+      accessToken: access_token,
+      expiresAt: tokenExpiry
+    });
+  } catch (error) {
+    console.error('❌ [REFRESH] Error:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to refresh token' });
+  }
+};

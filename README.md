@@ -1,359 +1,413 @@
-# Amazon Ads LWA Authentication & Automation Platform
+# 🚀 Amazon Ads Automation Platform
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-blue)](https://neon.tech/)
+> Multi-tenant Amazon Advertising campaign automation and management platform with real-time data synchronization
 
-A production-ready, comprehensive Amazon Advertising API automation platform with Login with Amazon (LWA) OAuth 2.0, **Neon PostgreSQL** database integration, and **full campaign management capabilities**.
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-blue.svg)](https://neon.tech/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## ✨ Features
+## 📋 Features
 
-### Authentication & Security
-- ✅ **Amazon LWA OAuth 2.0** - Secure authentication with token management
-- ✅ **Multi-Marketplace Support** - NA, EU, and FE regions
-- ✅ **Automatic Token Refresh** - Seamless access token renewal
-- ✅ **JWT Session Management** - Secure user sessions
+### ✅ Authentication & Authorization
+- Email/Password authentication with JWT
+- Amazon Login with Amazon (LWA) OAuth integration
+- Role-based access control (MASTER, ADMIN, USER)
+- Protected routes and API endpoints
+- Secure password hashing with bcrypt
 
-### Database & Storage
-- ✅ **Neon PostgreSQL** - Serverless, autoscaling database
-- ✅ **Complete Schema** - Users, Accounts, Campaigns, Ad Groups, Keywords, Alerts, Optimization Rules
-- ✅ **User-Specific Data** - Isolated multi-tenant architecture
-- ✅ **Automatic Sync** - Real-time data synchronization with Amazon Ads API
+### 📊 Dashboard & Analytics
+- Real-time campaign performance metrics
+- 8 key performance indicators (KPIs)
+- Campaign, Ad Group, and Keyword management
+- Audience targeting insights
+- Custom alerts and notifications
 
-### Amazon Ads API Integration
-- ✅ **Profiles Management** - Fetch and manage advertising profiles
-- ✅ **Campaigns** - Full CRUD operations with metrics tracking
-- ✅ **Ad Groups** - Manage ad groups within campaigns
-- ✅ **Keywords** - Track keyword performance with match types
-- ✅ **Audiences Scope** - Access to Amazon Advertising audiences
-- ✅ **Performance Metrics** - Impressions, clicks, spend, sales, ACOS, ROAS, CTR, CPC, CVR
+### 🔄 Amazon Ads Integration
+- OAuth 2.0 authentication flow
+- Automatic token refresh
+- Multi-marketplace support (NA, EU, FE)
+- Real-time data synchronization
+- Campaign metrics and reporting
 
-### Automation & Alerts
-- ✅ **Optimization Rules** - Create custom automation rules
-- ✅ **Alert System** - Real-time notifications for campaign events
-- ✅ **Bulk Data Sync** - One-click synchronization of all advertising data
-- ✅ **Dashboard Analytics** - Comprehensive metrics and summaries
+### 👤 User Management
+- Profile customization
+- Password management
+- Amazon account connection/disconnection
+- Account deletion (soft delete)
 
-## 📊 Database Schema
+### 🎨 Modern UI/UX
+- Responsive design
+- Gradient-based theme
+- Tab-based navigation
+- Loading states and animations
+- Error handling with user feedback
 
-Your Neon database includes 7 comprehensive tables:
-
-### Core Tables
-
-**1. users** - Authentication and user management
-- Stores LWA tokens, marketplace, profile ID
-- Tracks last sync timestamp
-
-**2. accounts** - Platform account connections
-- Multi-platform support (Amazon, Walmart ready)
-- Token management per account
-
-**3. campaigns** - Ad campaign data and metrics
-- Full campaign details (budget, targeting, dates)
-- Performance metrics (impressions, clicks, spend, sales, ACOS, ROAS)
-- State management (enabled, paused, archived)
-
-**4. ad_groups** - Ad group organization
-- Grouped under campaigns
-- Bid management and performance tracking
-
-**5. keywords** - Keyword-level data
-- Match type support (exact, phrase, broad)
-- Individual keyword performance
-- Bid optimization data
-
-**6. alerts** - Notification system
-- Campaign alerts and warnings
-- User-specific notifications
-- Read/unread tracking
-
-**7. optimization_rules** - Automation engine
-- Custom rule conditions
-- Automated actions
-- Execution tracking
-
-## 🛠️ Tech Stack
+## 🏗️ Tech Stack
 
 ### Backend
-- **Node.js 16+** with Express.js
-- **Neon PostgreSQL** (serverless PostgreSQL)
-- **JWT** for authentication
-- **Axios** for API requests
-- **UUID** for unique ID generation
+- **Runtime:** Node.js (v18+)
+- **Framework:** Express.js
+- **Database:** PostgreSQL (Neon)
+- **Authentication:** JWT, bcrypt
+- **API Integration:** Axios
 
 ### Frontend
-- **Vanilla JavaScript** - No framework dependencies
-- **HTML5 & CSS3** - Modern, responsive design
-- **Amazon LWA Button** - Native integration
+- **HTML5/CSS3**
+- **Vanilla JavaScript**
+- **Responsive Design**
 
-## 📝 API Endpoints
-
-### Authentication (`/api/auth`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/get-auth-url` | Generate LWA authorization URL |
-| GET | `/callback` | OAuth callback handler |
-| POST | `/exchange-token` | Exchange auth code for tokens |
-| GET | `/profile` | Get user profile |
-| POST | `/refresh-token` | Refresh access token |
-
-### Amazon Ads API (`/api/ads`)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/dashboard` | Get dashboard summary with metrics |
-| GET | `/profiles` | Fetch and store advertising profiles |
-| GET | `/campaigns` | Fetch and store campaigns in DB |
-| GET | `/ad-groups` | Fetch and store ad groups in DB |
-| GET | `/keywords` | Fetch and store keywords in DB |
-| GET | `/audiences` | Fetch audiences (NEW) |
-| GET | `/campaigns/metrics` | Get aggregated campaign metrics |
-| POST | `/automate-sync` | Comprehensive data sync to database |
-| GET | `/alerts` | Get user alerts |
-| PUT | `/alerts/:id/read` | Mark alert as read |
+### Infrastructure
+- **Hosting:** Vercel
+- **Database:** Neon PostgreSQL
+- **Version Control:** Git/GitHub
 
 ## 🚀 Quick Start
 
-### 1. Clone & Install
+### Prerequisites
+
+```bash
+# Required
+Node.js 18+ installed
+PostgreSQL database (Neon account)
+Amazon Developer Account
+Amazon Advertising API access
+```
+
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/rakshit782/amazon-ads-lwa-auth.git
-cd amazon-ads-lwa-auth/backend
+cd amazon-ads-lwa-auth
+```
+
+### 2. Install Dependencies
+
+```bash
+cd backend
 npm install
 ```
 
-### 2. Configure Environment
+### 3. Environment Setup
 
-```bash
-cp .env.example .env
-```
-
-Update `.env` with your credentials:
+Create `.env` file in `backend/` directory:
 
 ```env
-# Neon Database URL (from neon.tech dashboard)
-DATABASE_URL=postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/dbname?sslmode=require
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5500
 
-# Amazon LWA Credentials (from Seller Central)
-LWA_CLIENT_ID=amzn1.application-oa2-client.xxxxx
-LWA_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxx
+# Database (Neon PostgreSQL)
+DATABASE_URL=postgresql://user:password@host.region.aws.neon.tech/dbname?sslmode=require
+
+# Amazon LWA (Login with Amazon)
+LWA_CLIENT_ID=amzn1.application-oa2-client.YOUR_CLIENT_ID
+LWA_CLIENT_SECRET=YOUR_CLIENT_SECRET
 REDIRECT_URI=http://localhost:3000/api/auth/callback
 
-# Scopes (includes audiences)
+# Amazon Ads API Scopes
 AMAZON_ADS_API_SCOPE=advertising::campaign_management advertising::audiences
 
-# JWT Secret (generate random 32+ chars)
-JWT_SECRET=your_random_secret_key_here
+# JWT Secret (generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+JWT_SECRET=your_random_32_character_secret_key_here
 ```
 
-### 3. Start Backend
+### 4. Database Setup
 
 ```bash
-# The migration will run automatically when server starts
+# Test database connection
+npm run test:db
+
+# Run migrations
+npm run migrate
+
+# (Optional) Generate mock data for testing
+npm run db:mock
+```
+
+### 5. Start Development Server
+
+```bash
+# Backend
+cd backend
 npm run dev
+
+# Frontend (in separate terminal)
+# Open frontend/login.html in browser or use Live Server
 ```
 
-You should see:
-```
-✓ Neon PostgreSQL connected successfully
-Server running on port 3000
-```
+### 6. Access Application
 
-### 4. Start Frontend
-
-```bash
-cd ../frontend
-python -m http.server 5500
-# OR use Live Server extension in VS Code
+```
+Frontend: http://localhost:5500/login.html
+Backend API: http://localhost:3000
 ```
 
-### 5. Access Application
-
-Open browser: **http://localhost:5500**
-
-## 🔐 Amazon Seller Central Setup
-
-1. Go to [Amazon Seller Central Developer Console](https://developer.amazonservices.com/)
-2. Register your application:
-   - **Redirect URI**: `http://localhost:3000/api/auth/callback`
-   - **API Scopes**:
-     - `advertising::campaign_management`
-     - `advertising::audiences`
-3. Copy Client ID and Secret to `.env`
-4. Submit for Amazon Advertising API access approval
-
-## 💾 Database Operations
-
-### Automatic Data Sync Flow
-
-1. **User authenticates** → Tokens stored in `users` table
-2. **Fetch profiles** → Stored in `accounts` table
-3. **Fetch campaigns** → Stored in `campaigns` table with full details
-4. **Fetch ad groups** → Linked to campaigns in `ad_groups`
-5. **Fetch keywords** → Linked to campaigns/ad groups in `keywords`
-6. **Metrics tracking** → Updated in respective tables
-
-### Example: Auto Sync
-
-```javascript
-// POST /api/ads/automate-sync
-// Syncs ALL data from Amazon to your database
-{
-  "success": true,
-  "data": {
-    "profiles": 3,
-    "campaigns": 15,
-    "adGroups": 42,
-    "keywords": 230
-  },
-  "lastSync": "2026-01-22T12:30:00Z"
-}
-```
-
-## 💡 Key Features Explained
-
-### 1. Multi-Tenant Architecture
-Each user's data is completely isolated:
-- User-specific campaigns, keywords, and metrics
-- Separate token management per user
-- Individual sync timestamps
-
-### 2. Automatic Token Management
-- Tokens automatically refreshed before expiry
-- No manual intervention required
-- Seamless API access
-
-### 3. Comprehensive Metrics Tracking
-Track performance across all levels:
-- **Campaign level**: Overall performance
-- **Ad Group level**: Group-specific metrics
-- **Keyword level**: Individual keyword ROI
-
-### 4. Database-First Approach
-- All Amazon data synced to your database
-- Fast queries without API rate limits
-- Historical data tracking
-- Custom reporting capabilities
-
-## 📊 Usage Examples
-
-### Get Dashboard Summary
-
-```javascript
-GET /api/ads/dashboard
-Authorization: Bearer {jwt_token}
-
-Response:
-{
-  "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "marketplace": "NA",
-    "lastSync": "2026-01-22T12:00:00Z"
-  },
-  "campaigns": [ /* Top 5 campaigns */ ],
-  "metrics": {
-    "total_campaigns": 15,
-    "total_impressions": 150000,
-    "total_clicks": 3500,
-    "total_spend": 2500.50,
-    "total_sales": 12000.75,
-    "avg_acos": 20.84,
-    "avg_roas": 4.8
-  },
-  "unreadAlerts": 3
-}
-```
-
-### Sync All Data
-
-```javascript
-POST /api/ads/automate-sync
-Authorization: Bearer {jwt_token}
-
-// Fetches from Amazon and stores in database:
-// - All campaigns with full details
-// - All ad groups
-// - All keywords
-// - Updates metrics
-```
-
-## 🔧 Development
-
-### Project Structure
+## 📁 Project Structure
 
 ```
 amazon-ads-lwa-auth/
 ├── backend/
 │   ├── config/
-│   │   └── database.js          # Neon connection
+│   │   └── database.js          # Database connection
 │   ├── controllers/
-│   │   ├── authController.js    # LWA OAuth
-│   │   └── adsController.js     # Amazon Ads API + DB sync
+│   │   ├── authController.js    # Authentication logic
+│   │   └── adsController.js     # Amazon Ads API logic
 │   ├── middleware/
-│   │   └── auth.js              # JWT middleware
+│   │   └── auth.js              # JWT authentication
 │   ├── models/
-│   │   ├── User.js              # User operations
-│   │   ├── Account.js           # Account management
-│   │   ├── Campaign.js          # Campaign CRUD
-│   │   ├── AdGroup.js           # Ad group operations
-│   │   ├── Keyword.js           # Keyword tracking
-│   │   ├── Alert.js             # Alerts system
-│   │   └── OptimizationRule.js  # Automation rules
+│   │   └── User.js              # User model
 │   ├── routes/
-│   │   ├── auth.js
-│   │   └── ads.js
+│   │   ├── auth.js              # Auth routes
+│   │   └── ads.js               # Ads routes
+│   ├── utils/
+│   │   └── amazonAds.js         # Amazon API helpers
 │   ├── migrations/
-│   │   └── init.js
+│   │   └── init.js              # Database schema
 │   ├── scripts/
-│   │   └── reset-database.js
-│   └── server.js
-│
-└── frontend/
-    ├── index.html
-    ├── css/styles.css
-    └── js/
-        ├── auth.js
-        └── app.js
+│   │   ├── generate-mock-data.js
+│   │   ├── reset-database.js
+│   │   └── test-connection.js
+│   ├── .env                     # Environment variables
+│   ├── server.js                # Express server
+│   └── package.json
+├── frontend/
+│   ├── css/
+│   │   └── styles.css           # Global styles
+│   ├── js/
+│   │   ├── auth.js              # Auth utilities
+│   │   ├── dashboard.js         # Dashboard logic
+│   │   └── profile.js           # Profile management
+│   ├── login.html               # Login/Register page
+│   ├── dashboard.html           # Main dashboard
+│   ├── profile.html             # User profile
+│   ├── index.html               # Amazon OAuth flow
+│   └── callback.html            # OAuth callback handler
+├── vercel.json                  # Vercel configuration
+├── DEPLOYMENT.md                # Deployment guide
+└── README.md                    # This file
 ```
 
-## ⚠️ Troubleshooting
+## 🔑 Amazon Developer Setup
 
-### Database Issues
+### 1. Create Login with Amazon (LWA) Application
 
-If you see "column does not exist" errors:
+1. Go to [developer.amazon.com](https://developer.amazon.com)
+2. Navigate to **Login with Amazon** → **Create a New Security Profile**
+3. Fill in application details:
+   - **Name:** Amazon Ads Automation
+   - **Description:** Campaign management platform
+   - **Privacy Policy URL:** Your website
+
+### 2. Configure Web Settings
+
+**Allowed Origins:**
+```
+http://localhost:5500
+http://localhost:3000
+https://your-app.vercel.app
+```
+
+**Allowed Return URLs:**
+```
+http://localhost:3000/api/auth/callback
+https://your-app.vercel.app/api/auth/callback
+```
+
+### 3. Get Credentials
+
+- **Client ID:** Copy from security profile
+- **Client Secret:** Click "Show Secret" and copy
+- Add both to your `.env` file
+
+### 4. Apply for Amazon Advertising API Access
+
+1. Go to [advertising.amazon.com](https://advertising.amazon.com)
+2. Navigate to **Account Settings → API**
+3. Click **Request API Access**
+4. Fill out application (approval takes 1-2 business days)
+
+## 📊 Database Schema
+
+### Users Table
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  password VARCHAR(255),
+  role VARCHAR(50) DEFAULT 'USER',
+  marketplace VARCHAR(10),
+  region VARCHAR(10),
+  refresh_token TEXT,
+  access_token TEXT,
+  token_expiry TIMESTAMP,
+  profile_id VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  last_sync TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Campaigns Table
+```sql
+CREATE TABLE campaigns (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "userId" UUID REFERENCES users(id),
+  "platformId" VARCHAR(255) UNIQUE,
+  name VARCHAR(255),
+  state VARCHAR(50),
+  budget DECIMAL(10, 2),
+  "budgetType" VARCHAR(50),
+  "startDate" DATE,
+  impressions INTEGER,
+  clicks INTEGER,
+  spend DECIMAL(10, 2),
+  sales DECIMAL(10, 2),
+  orders INTEGER,
+  acos DECIMAL(5, 2),
+  roas DECIMAL(5, 2),
+  ctr DECIMAL(5, 2),
+  cpc DECIMAL(5, 2),
+  "conversionRate" DECIMAL(5, 2),
+  "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+*See `backend/migrations/init.js` for complete schema*
+
+## 🔌 API Endpoints
+
+### Authentication
+
+```
+POST   /api/auth/register              Register new user
+POST   /api/auth/login                 Login user
+GET    /api/auth/profile               Get user profile (protected)
+PUT    /api/auth/update-profile        Update profile (protected)
+PUT    /api/auth/change-password       Change password (protected)
+POST   /api/auth/disconnect-amazon     Disconnect Amazon (protected)
+DELETE /api/auth/delete-account        Delete account (protected)
+```
+
+### Amazon OAuth
+
+```
+POST   /api/auth/get-auth-url          Generate Amazon auth URL
+GET    /api/auth/callback              OAuth callback handler
+POST   /api/auth/exchange-token        Exchange code for tokens
+POST   /api/auth/refresh-token         Refresh access token (protected)
+```
+
+### Amazon Ads
+
+```
+GET    /api/ads/dashboard              Get dashboard data (protected)
+GET    /api/ads/campaigns              List campaigns (protected)
+GET    /api/ads/ad-groups              List ad groups (protected)
+GET    /api/ads/keywords               List keywords (protected)
+POST   /api/ads/automate-sync          Sync Amazon data (protected)
+```
+
+## 🧪 Testing
+
+### Test Environment Variables
 ```bash
-cd backend
-npm run db:reset  # Drops and recreates all tables
+npm run test:env
 ```
 
-### Token Issues
+### Test Database Connection
+```bash
+npm run test:db
+```
 
-If authentication fails:
-1. Check LWA credentials in `.env`
-2. Verify redirect URI matches Seller Central
-3. Ensure scopes include both:
-   - `advertising::campaign_management`
-   - `advertising::audiences`
+### Generate Mock Data
+```bash
+npm run db:mock
+```
+
+### Test API Endpoints
+
+**Register:**
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"test123","name":"Test User","marketplace":"NA"}'
+```
+
+**Login:**
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"test123"}'
+```
 
 ## 🚀 Deployment
 
-### Backend (Railway/Render)
-1. Connect GitHub repository
-2. Add environment variables from `.env`
-3. Deploy automatically
+### Deploy to Vercel
 
-### Frontend (Vercel/Netlify)
-1. Deploy `frontend` folder
-2. Update `API_BASE_URL` in `js/auth.js`
+```bash
+# Install Vercel CLI
+npm install -g vercel
 
-### Database
-Neon PostgreSQL is already serverless - no additional deployment needed!
+# Login
+vercel login
 
-## 📝 License
+# Deploy
+vercel --prod
+```
 
-MIT License - Free to use for personal and commercial projects
+### Add Environment Variables
+
+In Vercel Dashboard:
+1. Go to **Project Settings → Environment Variables**
+2. Add all variables from `.env`
+3. Redeploy
+
+### Update Redirect URIs
+
+After deployment, update in Amazon Developer Console:
+```
+https://your-app.vercel.app/api/auth/callback
+```
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
+## 📝 NPM Scripts
+
+```bash
+npm start              # Start production server
+npm run dev            # Start development server with nodemon
+npm run migrate        # Run database migrations
+npm run db:reset       # Reset database
+npm run db:mock        # Generate mock data
+npm run test:db        # Test database connection
+npm run test:env       # Verify environment variables
+```
+
+## 🔒 Security
+
+- Passwords hashed with bcrypt (10 rounds)
+- JWT tokens with 7-day expiration
+- HTTP-only cookies (recommended for production)
+- CORS configured
+- Environment variables for secrets
+- SQL injection prevention via parameterized queries
+- Token refresh mechanism
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
 
 ## 👤 Author
 
@@ -361,22 +415,20 @@ MIT License - Free to use for personal and commercial projects
 - GitHub: [@rakshit782](https://github.com/rakshit782)
 - Repository: [amazon-ads-lwa-auth](https://github.com/rakshit782/amazon-ads-lwa-auth)
 
-## 🤝 Contributing
+## 🙏 Acknowledgments
 
-Contributions welcome! Please submit Pull Requests.
+- Amazon Advertising API Documentation
+- Neon PostgreSQL
+- Express.js Community
+- Vercel Platform
 
-## ⭐ Show Support
+## 📞 Support
 
-Give a ⭐ if this helps your Amazon Ads automation!
+For issues and questions:
+- Create an issue in the repository
+- Check existing documentation
+- Review Amazon Advertising API docs
 
 ---
 
-**Built with ❤️ for comprehensive Amazon Advertising automation**
-
-### What Makes This Different?
-
-✅ **Database-First**: All data stored locally for fast access
-✅ **Production-Ready**: Complete error handling and token management
-✅ **Scalable**: Multi-tenant architecture supports multiple users
-✅ **Comprehensive**: Full Amazon Ads API integration
-✅ **Modern Stack**: Latest Node.js with serverless PostgreSQL
+**Made with ❤️ for Amazon Sellers**
