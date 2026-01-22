@@ -4,87 +4,552 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-    <title>Login - Amazon Ads Automation</title>
+    <title>Welcome - Amazon Ads Automation</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background shapes */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: white;
+            top: -50px;
+            left: -50px;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: white;
+            bottom: -30px;
+            right: -30px;
+            animation-delay: 5s;
+        }
+
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            background: white;
+            top: 50%;
+            left: 10%;
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Left side - App info */
+        .app-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .app-logo {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .app-info h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .app-info p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            opacity: 0.95;
+        }
+
+        .features {
+            margin-top: 30px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .feature-item span {
+            font-size: 1.5rem;
+            margin-right: 12px;
+        }
+
+        /* Right side - Auth forms */
+        .auth-section {
+            padding: 60px 50px;
+            background: white;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .auth-header h2 {
+            font-size: 2rem;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 30px;
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: #718096;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Forms */
+        .form-container {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: #a0aec0;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #a0aec0;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #667eea;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+
+        .divider span {
+            padding: 0 15px;
+        }
+
+        .alt-auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .alt-auth-btn:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        /* Messages */
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .message.error {
+            background: #fed7d7;
+            color: #c53030;
+            border-left: 4px solid #f56565;
+        }
+
+        .message.success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border-left: 4px solid #48bb78;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .app-info {
+                padding: 40px 30px;
+                text-align: center;
+            }
+
+            .app-info h1 {
+                font-size: 2rem;
+            }
+
+            .features {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+
+            .auth-section {
+                padding: 40px 30px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-section {
+                padding: 30px 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="auth-container">
-            <div class="auth-card">
-                <div class="auth-header">
-                    <h1>🛒 Amazon Ads Automation</h1>
-                    <p class="subtitle">Manage your campaigns efficiently</p>
-                </div>
+    <!-- Animated background shapes -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
 
-                <div class="tab-container">
-                    <button class="tab-button active" onclick="showTab('login')">Login</button>
-                    <button class="tab-button" onclick="showTab('register')">Register</button>
+    <div class="main-container">
+        <!-- Left side - App Information -->
+        <div class="app-info">
+            <div class="app-logo">🚀</div>
+            <h1>Amazon Ads Automation Platform</h1>
+            <p>Streamline your advertising campaigns with powerful automation and real-time analytics.</p>
+            
+            <div class="features">
+                <div class="feature-item">
+                    <span>📊</span>
+                    <div>Real-time Performance Metrics</div>
                 </div>
+                <div class="feature-item">
+                    <span>🤖</span>
+                    <div>Automated Campaign Management</div>
+                </div>
+                <div class="feature-item">
+                    <span>💰</span>
+                    <div>Budget Optimization</div>
+                </div>
+                <div class="feature-item">
+                    <span>🎯</span>
+                    <div>Keyword Bid Automation</div>
+                </div>
+                <div class="feature-item">
+                    <span>📈</span>
+                    <div>Advanced Analytics Dashboard</div>
+                </div>
+                <div class="feature-item">
+                    <span>🔔</span>
+                    <div>Smart Alerts & Notifications</div>
+                </div>
+                <div class="feature-item">
+                    <span>🌍</span>
+                    <div>Multi-Marketplace Support</div>
+                </div>
+                <div class="feature-item">
+                    <span>🔒</span>
+                    <div>Enterprise-Grade Security</div>
+                </div>
+            </div>
+        </div>
 
-                <!-- Login Form -->
-                <form id="loginForm" class="auth-form tab-content active">
+        <!-- Right side - Authentication -->
+        <div class="auth-section">
+            <div class="auth-header">
+                <h2>Welcome</h2>
+                <p>Sign in to your account or create a new one</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+                <button class="tab-btn" onclick="switchTab('register')">Sign Up</button>
+            </div>
+
+            <!-- Messages -->
+            <div id="errorMessage" class="message error"></div>
+            <div id="successMessage" class="message success"></div>
+
+            <!-- Login Form -->
+            <div id="loginForm" class="form-container active">
+                <form id="loginFormElement">
                     <div class="form-group">
-                        <label for="loginEmail">Email</label>
-                        <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                        <label>Email Address</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">📧</span>
+                            <input type="email" id="loginEmail" placeholder="you@example.com" required>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <div class="password-input">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔒</span>
                             <input type="password" id="loginPassword" placeholder="Enter your password" required>
-                            <button type="button" class="toggle-password" onclick="togglePassword('loginPassword')">
+                            <button type="button" class="password-toggle" onclick="togglePassword('loginPassword')">
                                 👁️
                             </button>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary">🔐 Login</button>
+                    <button type="submit" class="submit-btn">
+                        🚀 Sign In
+                    </button>
                 </form>
 
-                <!-- Register Form -->
-                <form id="registerForm" class="auth-form tab-content">
+                <div class="divider"><span>OR</span></div>
+
+                <button class="alt-auth-btn" onclick="window.location.href='index.html'">
+                    <span>🛒</span>
+                    Connect with Amazon
+                </button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="form-container">
+                <form id="registerFormElement">
                     <div class="form-group">
-                        <label for="registerName">Full Name</label>
-                        <input type="text" id="registerName" placeholder="Enter your name" required>
+                        <label>Full Name</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="registerName" placeholder="John Doe" required>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="registerEmail">Email</label>
-                        <input type="email" id="registerEmail" placeholder="Enter your email" required>
+                        <label>Email Address</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">📧</span>
+                            <input type="email" id="registerEmail" placeholder="you@example.com" required>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="registerPassword">Password</label>
-                        <div class="password-input">
+                        <label>Password</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔒</span>
                             <input type="password" id="registerPassword" placeholder="Min 6 characters" required minlength="6">
-                            <button type="button" class="toggle-password" onclick="togglePassword('registerPassword')">
+                            <button type="button" class="password-toggle" onclick="togglePassword('registerPassword')">
                                 👁️
                             </button>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="registerMarketplace">Marketplace</label>
-                        <select id="registerMarketplace" required>
-                            <option value="NA">North America (US, CA, MX)</option>
-                            <option value="EU">Europe (UK, DE, FR, IT, ES)</option>
-                            <option value="FE">Far East (JP, AU, IN)</option>
-                        </select>
+                        <label>Marketplace</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🌍</span>
+                            <select id="registerMarketplace" required>
+                                <option value="NA">🇺🇸 North America (US, CA, MX)</option>
+                                <option value="EU">🇪🇺 Europe (UK, DE, FR, IT, ES)</option>
+                                <option value="FE">🌏 Far East (JP, AU, IN)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <button type="submit" class="btn-primary">📝 Register</button>
+                    <button type="submit" class="submit-btn">
+                        ✨ Create Account
+                    </button>
                 </form>
 
-                <div class="divider">
-                    <span>OR</span>
-                </div>
+                <div class="divider"><span>OR</span></div>
 
-                <a href="index.html" class="btn-secondary">
-                    🛒 Connect with Amazon Account
-                </a>
-
-                <div id="errorMessage" class="error-message" style="display: none;"></div>
-                <div id="successMessage" class="success-message" style="display: none;"></div>
+                <button class="alt-auth-btn" onclick="window.location.href='index.html'">
+                    <span>🛒</span>
+                    Connect with Amazon
+                </button>
             </div>
         </div>
     </div>
@@ -94,19 +559,17 @@
         const auth = new AmazonAdsAuth();
 
         // Tab switching
-        function showTab(tab) {
-            const tabs = document.querySelectorAll('.tab-button');
-            const contents = document.querySelectorAll('.tab-content');
+        function switchTab(tab) {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const forms = document.querySelectorAll('.form-container');
 
             tabs.forEach(t => t.classList.remove('active'));
-            contents.forEach(c => c.classList.remove('active'));
+            forms.forEach(f => f.classList.remove('active'));
 
             event.target.classList.add('active');
             document.getElementById(tab + 'Form').classList.add('active');
 
-            // Clear messages
-            document.getElementById('errorMessage').style.display = 'none';
-            document.getElementById('successMessage').style.display = 'none';
+            hideMessages();
         }
 
         // Toggle password visibility
@@ -115,73 +578,83 @@
             field.type = field.type === 'password' ? 'text' : 'password';
         }
 
-        // Show error
+        // Show error message
         function showError(message) {
             const errorMsg = document.getElementById('errorMessage');
+            const successMsg = document.getElementById('successMessage');
             errorMsg.textContent = message;
-            errorMsg.style.display = 'block';
-            document.getElementById('successMessage').style.display = 'none';
+            errorMsg.classList.add('show');
+            successMsg.classList.remove('show');
+
+            setTimeout(() => errorMsg.classList.remove('show'), 5000);
         }
 
-        // Show success
+        // Show success message
         function showSuccess(message) {
+            const errorMsg = document.getElementById('errorMessage');
             const successMsg = document.getElementById('successMessage');
             successMsg.textContent = message;
-            successMsg.style.display = 'block';
-            document.getElementById('errorMessage').style.display = 'none';
+            successMsg.classList.add('show');
+            errorMsg.classList.remove('show');
+
+            setTimeout(() => successMsg.classList.remove('show'), 5000);
         }
 
-        // Login
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        // Hide all messages
+        function hideMessages() {
+            document.getElementById('errorMessage').classList.remove('show');
+            document.getElementById('successMessage').classList.remove('show');
+        }
+
+        // Login form
+        document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
+            const submitBtn = e.target.querySelector('.submit-btn');
 
             try {
-                const submitBtn = e.target.querySelector('button[type="submit"]');
                 submitBtn.disabled = true;
-                submitBtn.textContent = '⏳ Logging in...';
+                submitBtn.textContent = '⏳ Signing in...';
 
                 await auth.login(email, password);
-                showSuccess('Login successful! Redirecting...');
+                showSuccess('✅ Login successful! Redirecting to dashboard...');
 
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
-                }, 1000);
+                }, 1500);
             } catch (error) {
-                showError(error.message);
-                const submitBtn = e.target.querySelector('button[type="submit"]');
+                showError(error.message || 'Login failed. Please try again.');
                 submitBtn.disabled = false;
-                submitBtn.textContent = '🔐 Login';
+                submitBtn.textContent = '🚀 Sign In';
             }
         });
 
-        // Register
-        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        // Register form
+        document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const name = document.getElementById('registerName').value;
             const email = document.getElementById('registerEmail').value;
             const password = document.getElementById('registerPassword').value;
             const marketplace = document.getElementById('registerMarketplace').value;
+            const submitBtn = e.target.querySelector('.submit-btn');
 
             try {
-                const submitBtn = e.target.querySelector('button[type="submit"]');
                 submitBtn.disabled = true;
-                submitBtn.textContent = '⏳ Registering...';
+                submitBtn.textContent = '⏳ Creating account...';
 
                 await auth.register({ name, email, password, marketplace });
-                showSuccess('Registration successful! Redirecting...');
+                showSuccess('✅ Account created successfully! Redirecting...');
 
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
-                }, 1000);
+                }, 1500);
             } catch (error) {
-                showError(error.message);
-                const submitBtn = e.target.querySelector('button[type="submit"]');
+                showError(error.message || 'Registration failed. Please try again.');
                 submitBtn.disabled = false;
-                submitBtn.textContent = '📝 Register';
+                submitBtn.textContent = '✨ Create Account';
             }
         });
     </script>
