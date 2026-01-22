@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting to Amazon...</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .callback-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .callback-content {
+            text-align: center;
+            background: white;
+            padding: 60px 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            max-width: 500px;
+        }
+        .callback-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        .callback-spinner {
+            border: 6px solid var(--border-color);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status-message {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="callback-container">
+        <div class="callback-content">
+            <div class="callback-icon">🔗</div>
+            <h1>Connecting to Amazon</h1>
+            <div class="callback-spinner"></div>
+            <p id="statusMessage" class="status-message">Processing your authentication...</p>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api'
+            : '/api';
+
+        async function handleCallback() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const state = urlParams.get('state');
+
+                if (!code || !state) {
+                    throw new Error('Missing authorization code or state');
+                }
+
+                console.log('Processing OAuth callback...');
+                document.getElementById('statusMessage').textContent = 'Exchanging tokens with Amazon...';
+
+                const response = await fetch(`${API_BASE_URL}/auth/exchange-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code, state })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to authenticate');
+                }
+
+                console.log('✅ Authentication successful!');
+                
+                // Store auth token
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+
+                document.getElementById('statusMessage').textContent = '✅ Success! Redirecting to dashboard...';
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('❌ Callback error:', error);
+                document.getElementById('statusMessage').style.display = 'none';
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = `Error: ${error.message}. Redirecting to login...`;
+                errorDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 3000);
+            }
+        }
+
+        // Run on page load
+        handleCallback();
+    </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Error</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .error-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .error-content {
+            text-align: center;
+            background: white;
+            padding: 60px 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            max-width: 500px;
+        }
+        .error-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-content">
+            <div class="error-icon">❌</div>
+            <h1>Authentication Failed</h1>
+            <div id="errorDetails" class="error-message"></div>
+            <button onclick="window.location.href='login.html'" class="btn btn-primary" style="margin-top: 20px;">
+                Back to Login
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        const errorDiv = document.getElementById('errorDetails');
+
+        const errorMessages = {
+            'no_code': 'No authorization code received from Amazon. Please try again.',
+            'callback_failed': 'OAuth callback processing failed. Please try again.',
+            'token_exchange_failed': 'Failed to exchange authorization code for tokens.',
+            'access_denied': 'You denied access to the application.',
+            'invalid_client': 'Invalid client credentials. Please contact support.',
+            'default': 'An unknown error occurred. Please try again.'
+        };
+
+        errorDiv.textContent = errorMessages[error] || errorMessages['default'];
+    </script>
+</body>
+</html>
