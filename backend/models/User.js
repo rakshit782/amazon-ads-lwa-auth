@@ -26,10 +26,17 @@ class User {
     }
   }
 
-  // Create new user
+  // Create new user (role-based)
   static async create(userData) {
     try {
-      const { email, password, name, marketplace, region, refreshToken, accessToken, tokenExpiry } = userData;
+      const { 
+        email, password, name, marketplace, region, 
+        role = 'USER', // Default to USER
+        createdBy = null, 
+        parentAdminId = null,
+        organizationName = null,
+        refreshToken, accessToken, tokenExpiry 
+      } = userData;
       
       // Hash password if provided
       let hashedPassword = null;
@@ -39,11 +46,12 @@ class User {
 
       const query = `
         INSERT INTO users (
-          email, name, password, role, marketplace, region, 
-          refresh_token, access_token, token_expiry, 
+          email, name, password, role, marketplace, region,
+          created_by, parent_admin_id, organization_name,
+          refresh_token, access_token, token_expiry,
           is_active, created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING *
       `;
 
@@ -51,9 +59,12 @@ class User {
         email,
         name,
         hashedPassword,
-        'ADMIN', // Default role is ADMIN
+        role,
         marketplace,
         region,
+        createdBy,
+        parentAdminId,
+        organizationName,
         refreshToken || null,
         accessToken || null,
         tokenExpiry || null,
@@ -66,6 +77,42 @@ class User {
       return result.rows[0];
     } catch (error) {
       console.error('❌ [User.create] Error:', error);
+      throw error;
+    }
+  }
+
+  // Get all users created by an ADMIN
+  static async getUsersByAdmin(adminId) {
+    try {
+      const query = `
+        SELECT id, email, name, role, marketplace, is_active, created_at
+        FROM users
+        WHERE parent_admin_id = $1
+        ORDER BY created_at DESC
+      `;
+      const result = await pool.query(query, [adminId]);
+      return result.rows;
+    } catch (error) {
+      console.error('❌ [User.getUsersByAdmin] Error:', error);
+      throw error;
+    }
+  }
+
+  // Get all ADMINs (for MASTER view)
+  static async getAllAdmins() {
+    try {
+      const query = `
+        SELECT id, email, name, organization_name, marketplace, is_active, created_at,
+               (SELECT COUNT(*) FROM brands WHERE admin_id = users.id) as brand_count,
+               (SELECT COUNT(*) FROM users u WHERE u.parent_admin_id = users.id) as user_count
+        FROM users
+        WHERE role = 'ADMIN'
+        ORDER BY created_at DESC
+      `;
+      const result = await pool.query(query);
+      return result.rows;
+    } catch (error) {
+      console.error('❌ [User.getAllAdmins] Error:', error);
       throw error;
     }
   }
@@ -107,15 +154,33 @@ class User {
   }
 
   // Update profile
-  static async updateProfile(userId, { name }) {
+  static async updateProfile(userId, { name, organizationName }) {
     try {
+      const updates = [];
+      const values = [];
+      let paramCount = 1;
+
+      if (name) {
+        updates.push(`name = $${paramCount++}`);
+        values.push(name);
+      }
+      if (organizationName !== undefined) {
+        updates.push(`organization_name = $${paramCount++}`);
+        values.push(organizationName);
+      }
+
+      updates.push(`updated_at = $${paramCount++}`);
+      values.push(new Date());
+
+      values.push(userId);
+
       const query = `
         UPDATE users 
-        SET name = $1, updated_at = $2
-        WHERE id = $3
+        SET ${updates.join(', ')}
+        WHERE id = $${paramCount}
         RETURNING *
       `;
-      const values = [name, new Date(), userId];
+      
       const result = await pool.query(query, values);
       return result.rows[0];
     } catch (error) {
@@ -149,6 +214,18 @@ class User {
       return await bcrypt.compare(plainPassword, hashedPassword);
     } catch (error) {
       console.error('❌ [User.verifyPassword] Error:', error);
+      throw error;
+    }
+  }
+
+  // Check if user can access brand
+  static async canAccessBrand(userId, brandId) {
+    try {
+      const query = 'SELECT user_can_access_brand($1, $2) as can_access';
+      const result = await pool.query(query, [userId, brandId]);
+      return result.rows[0].can_access;
+    } catch (error) {
+      console.error('❌ [User.canAccessBrand] Error:', error);
       throw error;
     }
   }
