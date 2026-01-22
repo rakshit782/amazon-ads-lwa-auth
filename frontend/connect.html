@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>Connect Amazon Account - Amazon Ads Automation</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>🛒 Amazon Ads Automation</h1>
+                    <p class="subtitle">Connect your Amazon Advertising account to get started</p>
+                </div>
+
+                <form id="authForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" placeholder="Enter your name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Enter your email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="marketplace">Marketplace</label>
+                        <select id="marketplace" required>
+                            <option value="NA">North America (US, CA, MX)</option>
+                            <option value="EU">Europe (UK, DE, FR, IT, ES)</option>
+                            <option value="FE">Far East (JP, AU, IN)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="connectBtn">
+                        🔗 Login with Amazon
+                    </button>
+
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+
+                    <a href="index.html" class="btn-secondary">
+                        📧 Login with Email/Password
+                    </a>
+                </form>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        const auth = new AmazonAdsAuth();
+        const form = document.getElementById('authForm');
+        const errorMsg = document.getElementById('errorMessage');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const marketplace = document.getElementById('marketplace').value;
+
+            try {
+                errorMsg.style.display = 'none';
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('connectBtn').textContent = '⏳ Connecting...';
+
+                console.log('🔗 Getting Amazon auth URL...');
+                const authUrl = await auth.getAmazonAuthUrl({ name, email, marketplace });
+
+                console.log('✅ Redirecting to Amazon...');
+                window.location.href = authUrl;
+            } catch (error) {
+                console.error('❌ Error:', error);
+                errorMsg.textContent = error.message || 'Failed to connect. Please try again.';
+                errorMsg.style.display = 'block';
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('connectBtn').textContent = '🔗 Login with Amazon';
+            }
+        });
+    </script>
+</body>
+</html>
