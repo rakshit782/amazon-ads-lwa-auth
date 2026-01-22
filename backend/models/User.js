@@ -1,7 +1,26 @@
 const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 
+// Role constants
+const ROLES = {
+  MASTER: 'MASTER',
+  ADMIN: 'ADMIN',
+  USER: 'USER'
+};
+
+// Role hierarchy for permission checks
+const ROLE_HIERARCHY = {
+  MASTER: 3,
+  ADMIN: 2,
+  USER: 1
+};
+
 class User {
+  // Check if user has required permission level
+  static hasPermission(userRole, requiredRole) {
+    return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+  }
+
   // Find user by email
   static async findByEmail(email) {
     try {
@@ -267,3 +286,5 @@ class User {
 }
 
 module.exports = User;
+module.exports.ROLES = ROLES;
+module.exports.User = User;
