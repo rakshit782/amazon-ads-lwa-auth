@@ -8,8 +8,9 @@
     "dev": "nodemon server.js",
     "migrate": "node migrations/init.js",
     "db:reset": "node scripts/reset-database.js",
+    "db:mock": "node scripts/generate-mock-data.js",
     "test:db": "node scripts/test-connection.js",
-    "test:env": "node -e \"require('dotenv').config(); console.log('DATABASE_URL:', process.env.DATABASE_URL ? '✅ Loaded' : '❌ Missing'); console.log('LWA_CLIENT_ID:', process.env.LWA_CLIENT_ID ? '✅ Loaded' : '❌ Missing'); console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ Loaded' : '❌ Missing');\""
+    "test:env": "node -e \"require('dotenv').config(); console.log('DATABASE_URL:', process.env.DATABASE_URL ? '✅ Loaded' : '❌ Missing'); console.log('LWA_CLIENT_ID:', process.env.LWA_CLIENT_ID ? '✅ Loaded' : '❌ Missing'); console.log('LWA_CLIENT_SECRET:', process.env.LWA_CLIENT_SECRET ? '✅ Loaded' : '❌ Missing'); console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅ Loaded' : '❌ Missing');\""
   },
   "dependencies": {
     "express": "^4.18.2",
