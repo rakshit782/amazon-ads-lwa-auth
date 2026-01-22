@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
+const { ROLES } = require('../models/User');
 const Account = require('../models/Account');
 const Campaign = require('../models/Campaign');
 const AdGroup = require('../models/AdGroup');
@@ -62,18 +63,145 @@ const makeAdsApiRequest = async (user, endpoint, method = 'GET', data = null) =>
   return response.data;
 };
 
+// MASTER Dashboard - see all brands and their data
+exports.getMasterDashboard = async (req, res) => {
+  try {
+    // Get all ADMIN users (brands)
+    const brands = await User.getByRole(ROLES.ADMIN);
+    
+    // Get aggregated metrics for all brands
+    const allMetrics = [];
+    
+    for (const brand of brands) {
+      const metrics = await Campaign.getMetricsSummary(brand.id.toString());
+      const campaigns = await Campaign.findByUserId(brand.id.toString());
+      
+      allMetrics.push({
+        brandId: brand.id,
+        brandName: brand.name,
+        brandEmail: brand.email,
+        marketplace: brand.marketplace,
+        lastSync: brand.last_sync,
+        totalCampaigns: campaigns.length,
+        metrics
+      });
+    }
+
+    // Calculate overall totals
+    const overallMetrics = {
+      total_brands: brands.length,
+      total_campaigns: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_campaigns || 0), 0),
+      total_impressions: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_impressions || 0), 0),
+      total_clicks: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_clicks || 0), 0),
+      total_spend: allMetrics.reduce((sum, b) => sum + parseFloat(b.metrics.total_spend || 0), 0),
+      total_sales: allMetrics.reduce((sum, b) => sum + parseFloat(b.metrics.total_sales || 0), 0),
+      total_orders: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_orders || 0), 0)
+    };
+
+    res.json({
+      role: ROLES.MASTER,
+      brands: allMetrics,
+      overallMetrics
+    });
+  } catch (error) {
+    console.error('Master dashboard error:', error);
+    res.status(500).json({ error: 'Failed to fetch master dashboard' });
+  }
+};
+
+// Get all campaigns across all brands (MASTER only)
+exports.getAllCampaigns = async (req, res) => {
+  try {
+    const brands = await User.getByRole(ROLES.ADMIN);
+    const allCampaigns = [];
+
+    for (const brand of brands) {
+      const campaigns = await Campaign.findByUserId(brand.id.toString());
+      allCampaigns.push(...campaigns.map(c => ({
+        ...c,
+        brandName: brand.name,
+        brandEmail: brand.email
+      })));
+    }
+
+    res.json({ campaigns: allCampaigns });
+  } catch (error) {
+    console.error('Get all campaigns error:', error);
+    res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
+};
+
+// Get all keywords across all brands (MASTER only)
+exports.getAllKeywords = async (req, res) => {
+  try {
+    const brands = await User.getByRole(ROLES.ADMIN);
+    const allKeywords = [];
+
+    for (const brand of brands) {
+      const campaigns = await Campaign.findByUserId(brand.id.toString());
+      
+      for (const campaign of campaigns) {
+        const keywords = await Keyword.findByCampaignId(campaign.id);
+        allKeywords.push(...keywords.map(kw => ({
+          ...kw,
+          brandName: brand.name,
+          campaignName: campaign.name
+        })));
+      }
+    }
+
+    res.json({ keywords: allKeywords });
+  } catch (error) {
+    console.error('Get all keywords error:', error);
+    res.status(500).json({ error: 'Failed to fetch keywords' });
+  }
+};
+
+// Get all brands overview (MASTER only)
+exports.getAllBrands = async (req, res) => {
+  try {
+    const brands = await User.getByRole(ROLES.ADMIN);
+    
+    const brandsWithStats = await Promise.all(brands.map(async (brand) => {
+      const campaigns = await Campaign.findByUserId(brand.id.toString());
+      const metrics = await Campaign.getMetricsSummary(brand.id.toString());
+      
+      return {
+        id: brand.id,
+        name: brand.name,
+        email: brand.email,
+        marketplace: brand.marketplace,
+        isActive: brand.is_active,
+        lastSync: brand.last_sync,
+        createdAt: brand.created_at,
+        totalCampaigns: campaigns.length,
+        ...metrics
+      };
+    }));
+
+    res.json({ brands: brandsWithStats });
+  } catch (error) {
+    console.error('Get brands error:', error);
+    res.status(500).json({ error: 'Failed to fetch brands' });
+  }
+};
+
 // Get advertising profiles and store in accounts table
 exports.getProfiles = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
+    
+    // USER role cannot connect accounts
+    if (user.role === ROLES.USER) {
+      return res.status(403).json({ error: 'Read-only access. Cannot connect ad accounts.' });
+    }
+
     const profiles = await makeAdsApiRequest(user, '/v2/profiles');
     
-    // Save first profile ID if not set
     if (profiles.length > 0 && !user.profile_id) {
       await User.updateProfileId(user.id, profiles[0].profileId.toString());
     }
 
-    // Store in accounts table
     for (const profile of profiles) {
       const existing = await Account.findByPlatformAndUser('amazon', user.id.toString());
       if (!existing) {
@@ -101,33 +229,14 @@ exports.getProfiles = async (req, res) => {
 exports.getCampaigns = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const campaigns = await makeAdsApiRequest(user, '/v2/sp/campaigns');
     
-    // Store campaigns in database
-    for (const campaign of campaigns) {
-      await Campaign.upsert({
-        id: uuidv4(),
-        userId: user.id.toString(),
-        platformId: campaign.campaignId.toString(),
-        name: campaign.name,
-        state: campaign.state,
-        targetingType: campaign.targetingType,
-        budget: campaign.budget,
-        budgetType: campaign.budgetType,
-        startDate: campaign.startDate,
-        endDate: campaign.endDate,
-        premiumBidAdjustment: campaign.premiumBidAdjustment || false,
-        impressions: 0,
-        clicks: 0,
-        spend: 0,
-        sales: 0,
-        orders: 0
-      });
+    // If MASTER, can view specific brand's campaigns via query param
+    let userId = user.id.toString();
+    if (user.role === ROLES.MASTER && req.query.brandId) {
+      userId = req.query.brandId;
     }
-
-    // Get campaigns from database
-    const storedCampaigns = await Campaign.findByUserId(user.id.toString());
     
+    const storedCampaigns = await Campaign.findByUserId(userId);
     res.json({ campaigns: storedCampaigns });
   } catch (error) {
     console.error('Get campaigns error:', error.response?.data || error.message);
@@ -139,31 +248,13 @@ exports.getCampaigns = async (req, res) => {
 exports.getAdGroups = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const adGroups = await makeAdsApiRequest(user, '/v2/sp/adGroups');
     
-    // Store ad groups in database
-    for (const adGroup of adGroups) {
-      const campaign = await Campaign.findByPlatformId(adGroup.campaignId.toString());
-      
-      if (campaign) {
-        await AdGroup.upsert({
-          id: uuidv4(),
-          campaignId: campaign.id,
-          platformId: adGroup.adGroupId.toString(),
-          name: adGroup.name,
-          state: adGroup.state,
-          defaultBid: adGroup.defaultBid,
-          impressions: 0,
-          clicks: 0,
-          spend: 0,
-          sales: 0,
-          orders: 0
-        });
-      }
+    let userId = user.id.toString();
+    if (user.role === ROLES.MASTER && req.query.brandId) {
+      userId = req.query.brandId;
     }
 
-    // Return all ad groups for user's campaigns
-    const campaigns = await Campaign.findByUserId(user.id.toString());
+    const campaigns = await Campaign.findByUserId(userId);
     let storedAdGroups = [];
     for (const campaign of campaigns) {
       const groups = await AdGroup.findByCampaignId(campaign.id);
@@ -181,34 +272,13 @@ exports.getAdGroups = async (req, res) => {
 exports.getKeywords = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const keywords = await makeAdsApiRequest(user, '/v2/sp/keywords');
     
-    // Store keywords in database
-    for (const keyword of keywords) {
-      const campaign = await Campaign.findByPlatformId(keyword.campaignId.toString());
-      const adGroup = keyword.adGroupId ? await AdGroup.findByPlatformId(keyword.adGroupId.toString()) : null;
-      
-      if (campaign) {
-        await Keyword.upsert({
-          id: uuidv4(),
-          campaignId: campaign.id,
-          adGroupId: adGroup?.id || null,
-          platformId: keyword.keywordId.toString(),
-          keywordText: keyword.keywordText,
-          matchType: keyword.matchType,
-          state: keyword.state,
-          bid: keyword.bid,
-          impressions: 0,
-          clicks: 0,
-          spend: 0,
-          sales: 0,
-          orders: 0
-        });
-      }
+    let userId = user.id.toString();
+    if (user.role === ROLES.MASTER && req.query.brandId) {
+      userId = req.query.brandId;
     }
 
-    // Return all keywords for user's campaigns
-    const campaigns = await Campaign.findByUserId(user.id.toString());
+    const campaigns = await Campaign.findByUserId(userId);
     let storedKeywords = [];
     for (const campaign of campaigns) {
       const kws = await Keyword.findByCampaignId(campaign.id);
@@ -226,8 +296,12 @@ exports.getKeywords = async (req, res) => {
 exports.getAudiences = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const audiences = await makeAdsApiRequest(user, '/v2/stores/audiences');
     
+    if (user.role === ROLES.USER) {
+      return res.status(403).json({ error: 'Read-only access. Cannot fetch audiences.' });
+    }
+
+    const audiences = await makeAdsApiRequest(user, '/v2/stores/audiences');
     res.json({ audiences });
   } catch (error) {
     console.error('Get audiences error:', error.response?.data || error.message);
@@ -239,8 +313,13 @@ exports.getAudiences = async (req, res) => {
 exports.getCampaignMetrics = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
-    const summary = await Campaign.getMetricsSummary(user.id.toString());
     
+    let userId = user.id.toString();
+    if (user.role === ROLES.MASTER && req.query.brandId) {
+      userId = req.query.brandId;
+    }
+
+    const summary = await Campaign.getMetricsSummary(userId);
     res.json({ metrics: summary });
   } catch (error) {
     console.error('Get metrics error:', error.response?.data || error.message);
@@ -248,12 +327,11 @@ exports.getCampaignMetrics = async (req, res) => {
   }
 };
 
-// Automate data synchronization - comprehensive sync
+// Automate data synchronization - ADMIN and MASTER only
 exports.automateSync = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     
-    // Fetch all data from Amazon
     const [profiles, campaigns, adGroups, keywords] = await Promise.all([
       makeAdsApiRequest(user, '/v2/profiles'),
       makeAdsApiRequest(user, '/v2/sp/campaigns'),
@@ -268,7 +346,6 @@ exports.automateSync = async (req, res) => {
       keywords: 0
     };
 
-    // Sync campaigns
     for (const campaign of campaigns) {
       await Campaign.upsert({
         id: uuidv4(),
@@ -291,7 +368,6 @@ exports.automateSync = async (req, res) => {
       syncedCounts.campaigns++;
     }
 
-    // Sync ad groups
     for (const adGroup of adGroups) {
       const campaign = await Campaign.findByPlatformId(adGroup.campaignId.toString());
       if (campaign) {
@@ -312,7 +388,6 @@ exports.automateSync = async (req, res) => {
       }
     }
 
-    // Sync keywords
     for (const keyword of keywords) {
       const campaign = await Campaign.findByPlatformId(keyword.campaignId.toString());
       if (campaign) {
@@ -352,6 +427,11 @@ exports.automateSync = async (req, res) => {
 exports.getDashboard = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
+    
+    // MASTER gets special dashboard
+    if (user.role === ROLES.MASTER) {
+      return exports.getMasterDashboard(req, res);
+    }
     
     const [campaigns, metrics, alerts] = await Promise.all([
       Campaign.findByUserId(user.id.toString()),
