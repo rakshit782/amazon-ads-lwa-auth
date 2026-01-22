@@ -1,5 +1,6 @@
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { getTokenEndpoint, getAuthEndpoint } = require('../utils/amazonAds');
 
@@ -29,6 +30,130 @@ const MARKETPLACE_CONFIG = {
 const generateJWT = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
+
+// ==================== EMAIL/PASSWORD AUTHENTICATION ====================
+
+// Register new user with email/password
+exports.register = async (req, res) => {
+  try {
+    console.log('\n📝 [REGISTER] New user registration...');
+    const { email, password, name, marketplace = 'NA' } = req.body;
+
+    // Validation
+    if (!email || !password || !name) {
+      console.log('❌ [REGISTER] Missing required fields');
+      return res.status(400).json({ error: 'Email, password, and name are required' });
+    }
+
+    if (password.length < 6) {
+      console.log('❌ [REGISTER] Password too short');
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Check if user already exists
+    console.log('🔍 [REGISTER] Checking if user exists...');
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      console.log('❌ [REGISTER] User already exists:', email);
+      return res.status(400).json({ error: 'User already exists with this email' });
+    }
+
+    // Create new user
+    console.log('🔄 [REGISTER] Creating new user...');
+    const config = MARKETPLACE_CONFIG[marketplace];
+    const user = await User.create({
+      email,
+      password, // Will be hashed in User.create()
+      name,
+      marketplace,
+      region: config.region,
+      role: 'USER'
+    });
+
+    console.log('✅ [REGISTER] User created successfully!');
+    console.log('   User ID:', user.id);
+    console.log('   Email:', user.email);
+
+    // Generate JWT
+    const token = generateJWT(user.id);
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        marketplace: user.marketplace
+      }
+    });
+  } catch (error) {
+    console.error('❌ [REGISTER] Error:', error);
+    res.status(500).json({ error: 'Failed to register user', details: error.message });
+  }
+};
+
+// Login with email/password
+exports.login = async (req, res) => {
+  try {
+    console.log('\n🔐 [LOGIN] User login attempt...');
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      console.log('❌ [LOGIN] Missing credentials');
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Find user
+    console.log('🔍 [LOGIN] Looking up user:', email);
+    const user = await User.findByEmail(email);
+    if (!user) {
+      console.log('❌ [LOGIN] User not found');
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Verify password
+    console.log('🔍 [LOGIN] Verifying password...');
+    const isValidPassword = await User.verifyPassword(password, user.password);
+    if (!isValidPassword) {
+      console.log('❌ [LOGIN] Invalid password');
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Check if user is active
+    if (!user.is_active) {
+      console.log('❌ [LOGIN] User account is inactive');
+      return res.status(403).json({ error: 'Account is inactive. Please contact support.' });
+    }
+
+    console.log('✅ [LOGIN] Login successful!');
+    console.log('   User ID:', user.id);
+    console.log('   Email:', user.email);
+
+    // Generate JWT
+    const token = generateJWT(user.id);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        marketplace: user.marketplace,
+        hasAmazonAuth: !!(user.refresh_token && user.access_token)
+      }
+    });
+  } catch (error) {
+    console.error('❌ [LOGIN] Error:', error);
+    res.status(500).json({ error: 'Failed to login', details: error.message });
+  }
+};
+
+// ==================== AMAZON OAUTH AUTHENTICATION ====================
 
 // Get authorization URL with audiences scope
 exports.getAuthUrl = async (req, res) => {

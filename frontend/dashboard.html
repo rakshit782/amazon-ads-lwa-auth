@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Amazon Ads Automation</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="section" id="dashboardSection">
+            <div class="card">
+                <div class="dashboard-header">
+                    <div>
+                        <h1>📊 Dashboard</h1>
+                        <p class="subtitle">Amazon Advertising Analytics</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="connectAmazonBtn" class="btn-primary" style="display: none;">🛒 Connect Amazon</button>
+                        <button id="autoSyncBtn" class="btn-primary">🔄 Auto Sync</button>
+                        <button id="logoutBtn" class="btn-secondary">🚪 Logout</button>
+                    </div>
+                </div>
+
+                <div id="userInfo" class="user-info"></div>
+                
+                <div id="metricsSection" class="metrics-section"></div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="campaigns">📊 Campaigns</button>
+                    <button class="tab-btn" data-tab="adgroups">📁 Ad Groups</button>
+                    <button class="tab-btn" data-tab="keywords">🔑 Keywords</button>
+                    <button class="tab-btn" data-tab="audiences">👥 Audiences</button>
+                    <button class="tab-btn" data-tab="alerts">🔔 Alerts</button>
+                </div>
+
+                <div id="dataDisplay" class="tab-content"></div>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                <div id="successMessage" class="success-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
