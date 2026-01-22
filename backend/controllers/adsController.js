@@ -80,8 +80,73 @@ const getAdvertisingProfile = async (accessToken, adsEndpoint) => {
   }
 };
 
+// ==================== MASTER DASHBOARD ====================
+
+// Get MASTER dashboard - see all brands data
+const getMasterDashboard = async (req, res) => {
+  try {
+    console.log('\n👑 [MASTER_DASHBOARD] Loading master dashboard...');
+    
+    // Get all admins with their metrics
+    const admins = await User.getAllAdmins();
+    
+    res.json({
+      success: true,
+      admins,
+      total_admins: admins.length
+    });
+  } catch (error) {
+    console.error('❌ [MASTER_DASHBOARD] Error:', error);
+    res.status(500).json({ error: 'Failed to load master dashboard' });
+  }
+};
+
+// Get all campaigns across all brands
+const getAllCampaigns = async (req, res) => {
+  try {
+    console.log('\n👑 [ALL_CAMPAIGNS] Fetching all campaigns...');
+    
+    const campaigns = await Campaign.findAll();
+    
+    res.json({ campaigns, total: campaigns.length });
+  } catch (error) {
+    console.error('❌ [ALL_CAMPAIGNS] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
+};
+
+// Get all keywords across all brands
+const getAllKeywords = async (req, res) => {
+  try {
+    console.log('\n👑 [ALL_KEYWORDS] Fetching all keywords...');
+    
+    const keywords = await Keyword.findAll();
+    
+    res.json({ keywords, total: keywords.length });
+  } catch (error) {
+    console.error('❌ [ALL_KEYWORDS] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch keywords' });
+  }
+};
+
+// Get all brands
+const getAllBrands = async (req, res) => {
+  try {
+    console.log('\n👑 [ALL_BRANDS] Fetching all brands...');
+    
+    const admins = await User.getAllAdmins();
+    
+    res.json({ brands: admins, total: admins.length });
+  } catch (error) {
+    console.error('❌ [ALL_BRANDS] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch brands' });
+  }
+};
+
+// ==================== USER DASHBOARD ====================
+
 // Get dashboard summary
-exports.getDashboard = async (req, res) => {
+const getDashboard = async (req, res) => {
   try {
     console.log('\n📊 [DASHBOARD] Loading dashboard for user:', req.userId);
     
@@ -119,8 +184,31 @@ exports.getDashboard = async (req, res) => {
   }
 };
 
+// Get profiles
+const getProfiles = async (req, res) => {
+  try {
+    console.log('\n📋 [PROFILES] Fetching profiles for user:', req.userId);
+    
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      profiles: [{
+        id: user.profile_id,
+        marketplace: user.marketplace,
+        region: user.region
+      }]
+    });
+  } catch (error) {
+    console.error('❌ [PROFILES] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch profiles' });
+  }
+};
+
 // Get campaigns
-exports.getCampaigns = async (req, res) => {
+const getCampaigns = async (req, res) => {
   try {
     console.log('\n📊 [CAMPAIGNS] Fetching campaigns for user:', req.userId);
     
@@ -134,8 +222,22 @@ exports.getCampaigns = async (req, res) => {
   }
 };
 
+// Get campaign metrics
+const getCampaignMetrics = async (req, res) => {
+  try {
+    console.log('\n📈 [METRICS] Fetching campaign metrics...');
+    
+    const metrics = await Campaign.getMetricsSummary(req.userId);
+    
+    res.json({ metrics });
+  } catch (error) {
+    console.error('❌ [METRICS] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch metrics' });
+  }
+};
+
 // Get ad groups
-exports.getAdGroups = async (req, res) => {
+const getAdGroups = async (req, res) => {
   try {
     console.log('\n📁 [AD_GROUPS] Fetching ad groups for user:', req.userId);
     
@@ -150,7 +252,7 @@ exports.getAdGroups = async (req, res) => {
 };
 
 // Get keywords
-exports.getKeywords = async (req, res) => {
+const getKeywords = async (req, res) => {
   try {
     console.log('\n🔑 [KEYWORDS] Fetching keywords for user:', req.userId);
     
@@ -165,7 +267,7 @@ exports.getKeywords = async (req, res) => {
 };
 
 // Get alerts
-exports.getAlerts = async (req, res) => {
+const getAlerts = async (req, res) => {
   try {
     console.log('\n🔔 [ALERTS] Fetching alerts for user:', req.userId);
     
@@ -180,8 +282,23 @@ exports.getAlerts = async (req, res) => {
   }
 };
 
+// Mark alert as read
+const markAlertRead = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('\n✅ [ALERT] Marking alert as read:', id);
+    
+    await Alert.markAsRead(id, req.userId);
+    
+    res.json({ success: true, message: 'Alert marked as read' });
+  } catch (error) {
+    console.error('❌ [ALERT] Error:', error);
+    res.status(500).json({ error: 'Failed to mark alert as read' });
+  }
+};
+
 // Auto-sync from Amazon Ads API
-exports.automateSync = async (req, res) => {
+const automateSync = async (req, res) => {
   try {
     console.log('\n🔄 [SYNC] Starting automated sync for user:', req.userId);
     
@@ -337,7 +454,7 @@ exports.automateSync = async (req, res) => {
 };
 
 // Get audiences
-exports.getAudiences = async (req, res) => {
+const getAudiences = async (req, res) => {
   try {
     console.log('\n👥 [AUDIENCES] Fetching audiences...');
     
@@ -351,4 +468,21 @@ exports.getAudiences = async (req, res) => {
     console.error('❌ [AUDIENCES] Error:', error);
     res.status(500).json({ error: 'Failed to fetch audiences' });
   }
+};
+
+module.exports = {
+  getMasterDashboard,
+  getAllCampaigns,
+  getAllKeywords,
+  getAllBrands,
+  getDashboard,
+  getProfiles,
+  getCampaigns,
+  getCampaignMetrics,
+  getAdGroups,
+  getKeywords,
+  getAudiences,
+  getAlerts,
+  markAlertRead,
+  automateSync
 };
