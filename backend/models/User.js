@@ -31,13 +31,18 @@ class User {
     try {
       const { 
         email, password, name, marketplace, region, 
-        role = 'USER', // Default to USER
+        role = 'ADMIN', // Default to ADMIN
         createdBy = null, 
         parentAdminId = null,
         organizationName = null,
         refreshToken, accessToken, tokenExpiry 
       } = userData;
       
+      // 🔒 SECURITY: Block MASTER role creation
+      if (role === 'MASTER') {
+        throw new Error('MASTER role cannot be created via application code');
+      }
+
       // Hash password if provided
       let hashedPassword = null;
       if (password) {

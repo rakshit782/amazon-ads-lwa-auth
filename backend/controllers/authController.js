@@ -46,7 +46,7 @@ const generateJWT = (userId) => {
 exports.register = async (req, res) => {
   try {
     console.log('\n📝 [REGISTER] New user registration...');
-    const { email, password, name, marketplace = 'NA' } = req.body;
+    const { email, password, name, marketplace = 'NA', role: requestedRole, organizationName } = req.body;
 
     if (!email || !password || !name) {
       console.log('❌ [REGISTER] Missing required fields');
@@ -58,6 +58,14 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
+    // 🔒 SECURITY: Block MASTER role creation via API
+    if (requestedRole === 'MASTER') {
+      console.log('❌ [REGISTER] Attempted MASTER role creation blocked');
+      return res.status(403).json({ 
+        error: 'Forbidden: MASTER role can only be created directly in database' 
+      });
+    }
+
     console.log('🔍 [REGISTER] Checking if user exists...');
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -67,30 +75,38 @@ exports.register = async (req, res) => {
 
     console.log('🔄 [REGISTER] Creating new user...');
     const config = MARKETPLACE_CONFIG[marketplace];
+    
+    // Default role is ADMIN for public registration
+    const userRole = 'ADMIN';
+    
     const user = await User.create({
       email,
       password,
       name,
       marketplace,
       region: config.region,
-      role: 'USER'
+      role: userRole,
+      organizationName: organizationName || null
     });
 
     console.log('✅ [REGISTER] User created successfully!');
     console.log('   User ID:', user.id);
     console.log('   Email:', user.email);
+    console.log('   Role:', user.role);
 
     const token = generateJWT(user.id);
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'User registered successfully as ADMIN',
       token,
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
-        marketplace: user.marketplace
+        role: user.role,
+        marketplace: user.marketplace,
+        organizationName: user.organization_name
       }
     });
   } catch (error) {
@@ -131,6 +147,7 @@ exports.login = async (req, res) => {
 
     console.log('✅ [LOGIN] Login successful!');
     console.log('   User ID:', user.id);
+    console.log('   Role:', user.role);
 
     const token = generateJWT(user.id);
 
@@ -142,7 +159,9 @@ exports.login = async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
         marketplace: user.marketplace,
+        organizationName: user.organization_name,
         hasAmazonAuth: !!(user.refresh_token && user.access_token)
       }
     });
@@ -169,14 +188,15 @@ exports.getProfile = async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
+        role: user.role,
         marketplace: user.marketplace,
         region: user.region,
+        organizationName: user.organization_name,
         profile_id: user.profile_id,
         is_active: user.is_active,
         last_sync: user.last_sync,
         created_at: user.created_at,
-        refresh_token: user.refresh_token,
-        access_token: user.access_token
+        hasAmazonAuth: !!(user.refresh_token && user.access_token)
       }
     });
   } catch (error) {
@@ -188,13 +208,13 @@ exports.getProfile = async (req, res) => {
 // Update profile
 exports.updateProfile = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, organizationName } = req.body;
     
-    if (!name) {
-      return res.status(400).json({ error: 'Name is required' });
+    if (!name && !organizationName) {
+      return res.status(400).json({ error: 'Name or organization name is required' });
     }
 
-    await User.updateProfile(req.userId, { name });
+    await User.updateProfile(req.userId, { name, organizationName });
     res.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {
     console.error('❌ [UPDATE_PROFILE] Error:', error);
@@ -240,6 +260,15 @@ exports.disconnectAmazon = async (req, res) => {
 // Delete account
 exports.deleteAccount = async (req, res) => {
   try {
+    const user = await User.findById(req.userId);
+    
+    // 🔒 SECURITY: Prevent MASTER account deletion
+    if (user.role === 'MASTER') {
+      return res.status(403).json({ 
+        error: 'Forbidden: MASTER account cannot be deleted via API' 
+      });
+    }
+
     await User.deleteAccount(req.userId);
     res.json({ success: true, message: 'Account deleted successfully' });
   } catch (error) {
@@ -254,7 +283,7 @@ exports.deleteAccount = async (req, res) => {
 exports.getAuthUrl = async (req, res) => {
   try {
     console.log('\n📝 [AUTH] Generating authorization URL...');
-    const { email, name, marketplace = 'NA' } = req.body;
+    const { email, name, marketplace = 'NA', organizationName } = req.body;
 
     if (!email || !name) {
       console.log('❌ [AUTH] Missing required fields');
@@ -269,7 +298,13 @@ exports.getAuthUrl = async (req, res) => {
       scope: process.env.AMAZON_ADS_API_SCOPE,
       response_type: 'code',
       redirect_uri: process.env.REDIRECT_URI,
-      state: JSON.stringify({ email, name, marketplace, region: config.region })
+      state: JSON.stringify({ 
+        email, 
+        name, 
+        marketplace, 
+        region: config.region,
+        organizationName: organizationName || null
+      })
     });
 
     console.log('✅ [AUTH] Authorization URL generated successfully');
@@ -318,7 +353,7 @@ exports.exchangeToken = async (req, res) => {
     }
 
     const stateData = JSON.parse(state);
-    const { email, name, marketplace, region } = stateData;
+    const { email, name, marketplace, region, organizationName } = stateData;
 
     console.log('🔄 [EXCHANGE] Calling Amazon token endpoint...');
     const tokenEndpoint = getTokenEndpoint(marketplace);
@@ -349,27 +384,22 @@ exports.exchangeToken = async (req, res) => {
       console.log('🔄 [DATABASE] Updating existing user tokens...');
       user = await User.updateTokens(email, refresh_token, access_token, tokenExpiry);
     } else {
-      console.log('🔄 [DATABASE] Creating new user...');
+      console.log('🔄 [DATABASE] Creating new user with ADMIN role...');
       user = await User.create({
         email,
         name,
         marketplace,
         region,
+        role: 'ADMIN', // Default role for Amazon OAuth
+        organizationName: organizationName || null,
         refreshToken: refresh_token,
         accessToken: access_token,
-        tokenExpiry,
-        role: 'USER'
+        tokenExpiry
       });
     }
 
     console.log('✅ [DATABASE] User tokens updated successfully');
-
-    const verifiedUser = await User.findByEmail(email);
-    if (verifiedUser && verifiedUser.refresh_token) {
-      console.log('✅ [VERIFY] User verified in database');
-    } else {
-      console.log('⚠️ [VERIFY] Warning: User tokens may not have saved correctly');
-    }
+    console.log('   Role:', user.role);
 
     const token = generateJWT(user.id);
 
@@ -382,7 +412,9 @@ exports.exchangeToken = async (req, res) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        marketplace: user.marketplace
+        role: user.role,
+        marketplace: user.marketplace,
+        organizationName: user.organization_name
       }
     });
   } catch (error) {
