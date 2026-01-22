@@ -3,29 +3,30 @@ const { query } = require('../config/database');
 class User {
   // Create users table if not exists
   static async createTable() {
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        marketplace VARCHAR(10) NOT NULL,
-        region VARCHAR(10) NOT NULL,
-        refresh_token TEXT,
-        access_token TEXT,
-        token_expiry TIMESTAMP,
-        profile_id VARCHAR(100),
-        is_active BOOLEAN DEFAULT true,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_sync TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-      CREATE INDEX IF NOT EXISTS idx_users_profile_id ON users(profile_id);
-    `;
-
     try {
-      await query(createTableQuery);
+      // Create table
+      await query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          marketplace VARCHAR(10) NOT NULL,
+          region VARCHAR(10) NOT NULL,
+          refresh_token TEXT,
+          access_token TEXT,
+          token_expiry TIMESTAMP,
+          profile_id VARCHAR(100),
+          is_active BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          last_sync TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Create indexes separately
+      await query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+      await query('CREATE INDEX IF NOT EXISTS idx_users_profile_id ON users(profile_id)');
+      
       console.log('✓ Users table ready');
     } catch (error) {
       console.error('Error creating users table:', error);
