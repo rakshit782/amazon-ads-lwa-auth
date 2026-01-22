@@ -1,22 +1,14 @@
 const { query } = require('../config/database');
+const { v4: uuidv4 } = require('uuid');
 
 class Campaign {
-  // Find all campaigns for a user
+  // Find by user ID
   static async findByUserId(userId) {
     const result = await query(
-      'SELECT * FROM campaigns WHERE "userId" = $1 ORDER BY "createdAt" DESC',
+      `SELECT * FROM campaigns WHERE "userId" = $1 ORDER BY "createdAt" DESC`,
       [userId]
     );
     return result.rows;
-  }
-
-  // Find campaign by ID
-  static async findById(id) {
-    const result = await query(
-      'SELECT * FROM campaigns WHERE id = $1',
-      [id]
-    );
-    return result.rows[0] || null;
   }
 
   // Find by platform ID
@@ -28,84 +20,72 @@ class Campaign {
     return result.rows[0] || null;
   }
 
-  // Create or update campaign
+  // Upsert campaign
   static async upsert(campaignData) {
     const {
-      id, userId, platformId, name, state, targetingType, budget, budgetType,
-      startDate, endDate, premiumBidAdjustment, impressions, clicks, spend,
-      sales, orders, acos, roas, ctr, cpc, cvr
+      userId,
+      platformId,
+      name,
+      state,
+      budget,
+      budgetType,
+      startDate,
+      impressions = 0,
+      clicks = 0,
+      spend = 0,
+      sales = 0,
+      orders = 0
     } = campaignData;
+
+    const id = uuidv4();
+    const acos = sales > 0 ? (spend / sales * 100) : 0;
+    const roas = spend > 0 ? (sales / spend) : 0;
+    const ctr = impressions > 0 ? (clicks / impressions * 100) : 0;
+    const cpc = clicks > 0 ? (spend / clicks) : 0;
+    const conversionRate = clicks > 0 ? (orders / clicks * 100) : 0;
 
     const result = await query(
       `INSERT INTO campaigns (
-        id, "userId", "platformId", name, state, "targetingType", budget, "budgetType",
-        "startDate", "endDate", "premiumBidAdjustment", impressions, clicks, spend,
-        sales, orders, acos, roas, ctr, cpc, cvr, "lastSyncAt", "createdAt", "updatedAt"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      ON CONFLICT (id) DO UPDATE SET
+        id, "userId", "platformId", name, state, budget, "budgetType",
+        "startDate", impressions, clicks, spend, sales, orders,
+        acos, roas, ctr, cpc, "conversionRate",
+        "createdAt", "updatedAt"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT ("platformId") 
+      DO UPDATE SET
         name = EXCLUDED.name,
         state = EXCLUDED.state,
-        "targetingType" = EXCLUDED."targetingType",
         budget = EXCLUDED.budget,
         "budgetType" = EXCLUDED."budgetType",
-        "startDate" = EXCLUDED."startDate",
-        "endDate" = EXCLUDED."endDate",
-        "premiumBidAdjustment" = EXCLUDED."premiumBidAdjustment",
-        impressions = EXCLUDED.impressions,
-        clicks = EXCLUDED.clicks,
-        spend = EXCLUDED.spend,
-        sales = EXCLUDED.sales,
-        orders = EXCLUDED.orders,
-        acos = EXCLUDED.acos,
-        roas = EXCLUDED.roas,
-        ctr = EXCLUDED.ctr,
-        cpc = EXCLUDED.cpc,
-        cvr = EXCLUDED.cvr,
-        "lastSyncAt" = CURRENT_TIMESTAMP,
         "updatedAt" = CURRENT_TIMESTAMP
       RETURNING *`,
-      [id, userId, platformId, name, state, targetingType, budget, budgetType,
-       startDate, endDate, premiumBidAdjustment || false, impressions || 0, clicks || 0,
-       spend || 0, sales || 0, orders || 0, acos, roas, ctr, cpc, cvr]
+      [
+        id, userId, platformId, name, state, budget, budgetType,
+        startDate, impressions, clicks, spend, sales, orders,
+        acos, roas, ctr, cpc, conversionRate
+      ]
     );
 
     return result.rows[0];
   }
 
-  // Update metrics
-  static async updateMetrics(id, metrics) {
-    const { impressions, clicks, spend, sales, orders, acos, roas, ctr, cpc, cvr } = metrics;
-    
-    const result = await query(
-      `UPDATE campaigns 
-       SET impressions = $1, clicks = $2, spend = $3, sales = $4, orders = $5,
-           acos = $6, roas = $7, ctr = $8, cpc = $9, cvr = $10,
-           "lastSyncAt" = CURRENT_TIMESTAMP, "updatedAt" = CURRENT_TIMESTAMP
-       WHERE id = $11
-       RETURNING *`,
-      [impressions, clicks, spend, sales, orders, acos, roas, ctr, cpc, cvr, id]
-    );
-    
-    return result.rows[0];
-  }
-
-  // Get campaigns with metrics summary
+  // Get metrics summary
   static async getMetricsSummary(userId) {
     const result = await query(
       `SELECT 
         COUNT(*) as total_campaigns,
-        SUM(impressions) as total_impressions,
-        SUM(clicks) as total_clicks,
-        SUM(spend) as total_spend,
-        SUM(sales) as total_sales,
-        SUM(orders) as total_orders,
-        AVG(acos) as avg_acos,
-        AVG(roas) as avg_roas
-      FROM campaigns
+        COALESCE(SUM(impressions), 0) as total_impressions,
+        COALESCE(SUM(clicks), 0) as total_clicks,
+        COALESCE(SUM(spend), 0) as total_spend,
+        COALESCE(SUM(sales), 0) as total_sales,
+        COALESCE(SUM(orders), 0) as total_orders,
+        COALESCE(AVG(acos), 0) as avg_acos,
+        COALESCE(AVG(roas), 0) as avg_roas
+      FROM campaigns 
       WHERE "userId" = $1`,
       [userId]
     );
-    
+
     return result.rows[0];
   }
 

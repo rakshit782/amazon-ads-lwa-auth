@@ -1,478 +1,354 @@
 const axios = require('axios');
-const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
-const { ROLES } = require('../models/User');
-const Account = require('../models/Account');
 const Campaign = require('../models/Campaign');
 const AdGroup = require('../models/AdGroup');
 const Keyword = require('../models/Keyword');
 const Alert = require('../models/Alert');
 
+// Marketplace API endpoints
 const MARKETPLACE_CONFIG = {
   NA: { adsEndpoint: 'https://advertising-api.amazon.com' },
   EU: { adsEndpoint: 'https://advertising-api-eu.amazon.com' },
   FE: { adsEndpoint: 'https://advertising-api-fe.amazon.com' }
 };
 
-// Helper to get valid access token
+// Get valid access token (auto-refresh if expired)
 const getValidAccessToken = async (user) => {
-  if (new Date() >= new Date(user.token_expiry)) {
-    const tokenResponse = await axios.post('https://api.amazon.com/auth/o2/token',
-      new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: user.refresh_token,
-        client_id: process.env.LWA_CLIENT_ID,
-        client_secret: process.env.LWA_CLIENT_SECRET
-      }), {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-
-    const { access_token, expires_in } = tokenResponse.data;
-    const tokenExpiry = new Date(Date.now() + expires_in * 1000);
-    
-    await User.updateAccessToken(user.id, access_token, tokenExpiry);
-    return access_token;
+  console.log('\n🔑 [TOKEN] Checking token validity...');
+  
+  if (!user.access_token || !user.refresh_token) {
+    console.log('❌ [TOKEN] No tokens found for user');
+    throw new Error('Amazon account not connected. Please connect your Amazon account first.');
   }
+
+  const now = new Date();
+  const expiry = new Date(user.token_expiry);
+  
+  // Token expired - refresh it
+  if (now >= expiry) {
+    console.log('⏰ [TOKEN] Token expired, refreshing...');
+    
+    try {
+      const tokenResponse = await axios.post('https://api.amazon.com/auth/o2/token', 
+        new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: user.refresh_token,
+          client_id: process.env.LWA_CLIENT_ID,
+          client_secret: process.env.LWA_CLIENT_SECRET
+        }), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+
+      const { access_token, expires_in } = tokenResponse.data;
+      const newExpiry = new Date(Date.now() + expires_in * 1000);
+      
+      await User.updateAccessToken(user.id, access_token, newExpiry);
+      console.log('✅ [TOKEN] Token refreshed successfully');
+      
+      return access_token;
+    } catch (error) {
+      console.error('❌ [TOKEN] Refresh failed:', error.response?.data || error.message);
+      throw new Error('Failed to refresh Amazon token. Please reconnect your Amazon account.');
+    }
+  }
+  
+  console.log('✅ [TOKEN] Token still valid');
   return user.access_token;
 };
 
-// Helper for API requests
-const makeAdsApiRequest = async (user, endpoint, method = 'GET', data = null) => {
-  const accessToken = await getValidAccessToken(user);
-  const config = MARKETPLACE_CONFIG[user.marketplace];
+// Get user's advertising profile
+const getAdvertisingProfile = async (accessToken, adsEndpoint) => {
+  console.log('\n📋 [PROFILE] Fetching advertising profiles...');
   
-  const options = {
-    method,
-    url: `${config.adsEndpoint}${endpoint}`,
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Amazon-Advertising-API-ClientId': process.env.LWA_CLIENT_ID,
-      'Content-Type': 'application/json'
-    }
-  };
-
-  if (user.profile_id) {
-    options.headers['Amazon-Advertising-API-Scope'] = user.profile_id;
-  }
-
-  if (data) {
-    options.data = data;
-  }
-
-  const response = await axios(options);
-  return response.data;
-};
-
-// MASTER Dashboard - see all brands and their data
-exports.getMasterDashboard = async (req, res) => {
   try {
-    // Get all ADMIN users (brands)
-    const brands = await User.getByRole(ROLES.ADMIN);
-    
-    // Get aggregated metrics for all brands
-    const allMetrics = [];
-    
-    for (const brand of brands) {
-      const metrics = await Campaign.getMetricsSummary(brand.id.toString());
-      const campaigns = await Campaign.findByUserId(brand.id.toString());
-      
-      allMetrics.push({
-        brandId: brand.id,
-        brandName: brand.name,
-        brandEmail: brand.email,
-        marketplace: brand.marketplace,
-        lastSync: brand.last_sync,
-        totalCampaigns: campaigns.length,
-        metrics
-      });
-    }
-
-    // Calculate overall totals
-    const overallMetrics = {
-      total_brands: brands.length,
-      total_campaigns: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_campaigns || 0), 0),
-      total_impressions: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_impressions || 0), 0),
-      total_clicks: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_clicks || 0), 0),
-      total_spend: allMetrics.reduce((sum, b) => sum + parseFloat(b.metrics.total_spend || 0), 0),
-      total_sales: allMetrics.reduce((sum, b) => sum + parseFloat(b.metrics.total_sales || 0), 0),
-      total_orders: allMetrics.reduce((sum, b) => sum + parseInt(b.metrics.total_orders || 0), 0)
-    };
-
-    res.json({
-      role: ROLES.MASTER,
-      brands: allMetrics,
-      overallMetrics
+    const response = await axios.get(`${adsEndpoint}/v2/profiles`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Amazon-Advertising-API-ClientId': process.env.LWA_CLIENT_ID,
+        'Content-Type': 'application/json'
+      }
     });
+
+    const profiles = response.data;
+    console.log(`✅ [PROFILE] Found ${profiles.length} profile(s)`);
+    
+    // Return first profile (or specific profile based on marketplace)
+    return profiles[0];
   } catch (error) {
-    console.error('Master dashboard error:', error);
-    res.status(500).json({ error: 'Failed to fetch master dashboard' });
-  }
-};
-
-// Get all campaigns across all brands (MASTER only)
-exports.getAllCampaigns = async (req, res) => {
-  try {
-    const brands = await User.getByRole(ROLES.ADMIN);
-    const allCampaigns = [];
-
-    for (const brand of brands) {
-      const campaigns = await Campaign.findByUserId(brand.id.toString());
-      allCampaigns.push(...campaigns.map(c => ({
-        ...c,
-        brandName: brand.name,
-        brandEmail: brand.email
-      })));
-    }
-
-    res.json({ campaigns: allCampaigns });
-  } catch (error) {
-    console.error('Get all campaigns error:', error);
-    res.status(500).json({ error: 'Failed to fetch campaigns' });
-  }
-};
-
-// Get all keywords across all brands (MASTER only)
-exports.getAllKeywords = async (req, res) => {
-  try {
-    const brands = await User.getByRole(ROLES.ADMIN);
-    const allKeywords = [];
-
-    for (const brand of brands) {
-      const campaigns = await Campaign.findByUserId(brand.id.toString());
-      
-      for (const campaign of campaigns) {
-        const keywords = await Keyword.findByCampaignId(campaign.id);
-        allKeywords.push(...keywords.map(kw => ({
-          ...kw,
-          brandName: brand.name,
-          campaignName: campaign.name
-        })));
-      }
-    }
-
-    res.json({ keywords: allKeywords });
-  } catch (error) {
-    console.error('Get all keywords error:', error);
-    res.status(500).json({ error: 'Failed to fetch keywords' });
-  }
-};
-
-// Get all brands overview (MASTER only)
-exports.getAllBrands = async (req, res) => {
-  try {
-    const brands = await User.getByRole(ROLES.ADMIN);
-    
-    const brandsWithStats = await Promise.all(brands.map(async (brand) => {
-      const campaigns = await Campaign.findByUserId(brand.id.toString());
-      const metrics = await Campaign.getMetricsSummary(brand.id.toString());
-      
-      return {
-        id: brand.id,
-        name: brand.name,
-        email: brand.email,
-        marketplace: brand.marketplace,
-        isActive: brand.is_active,
-        lastSync: brand.last_sync,
-        createdAt: brand.created_at,
-        totalCampaigns: campaigns.length,
-        ...metrics
-      };
-    }));
-
-    res.json({ brands: brandsWithStats });
-  } catch (error) {
-    console.error('Get brands error:', error);
-    res.status(500).json({ error: 'Failed to fetch brands' });
-  }
-};
-
-// Get advertising profiles and store in accounts table
-exports.getProfiles = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    
-    // USER role cannot connect accounts
-    if (user.role === ROLES.USER) {
-      return res.status(403).json({ error: 'Read-only access. Cannot connect ad accounts.' });
-    }
-
-    const profiles = await makeAdsApiRequest(user, '/v2/profiles');
-    
-    if (profiles.length > 0 && !user.profile_id) {
-      await User.updateProfileId(user.id, profiles[0].profileId.toString());
-    }
-
-    for (const profile of profiles) {
-      const existing = await Account.findByPlatformAndUser('amazon', user.id.toString());
-      if (!existing) {
-        await Account.create({
-          id: uuidv4(),
-          userId: user.id.toString(),
-          platform: 'amazon',
-          profileId: profile.profileId.toString(),
-          accessToken: user.access_token,
-          refreshToken: user.refresh_token,
-          tokenExpiresAt: user.token_expiry,
-          scope: process.env.AMAZON_ADS_API_SCOPE
-        });
-      }
-    }
-
-    res.json({ profiles });
-  } catch (error) {
-    console.error('Get profiles error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch profiles', details: error.response?.data });
-  }
-};
-
-// Get campaigns and store in database
-exports.getCampaigns = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    
-    // If MASTER, can view specific brand's campaigns via query param
-    let userId = user.id.toString();
-    if (user.role === ROLES.MASTER && req.query.brandId) {
-      userId = req.query.brandId;
-    }
-    
-    const storedCampaigns = await Campaign.findByUserId(userId);
-    res.json({ campaigns: storedCampaigns });
-  } catch (error) {
-    console.error('Get campaigns error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch campaigns', details: error.response?.data });
-  }
-};
-
-// Get ad groups and store in database
-exports.getAdGroups = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    
-    let userId = user.id.toString();
-    if (user.role === ROLES.MASTER && req.query.brandId) {
-      userId = req.query.brandId;
-    }
-
-    const campaigns = await Campaign.findByUserId(userId);
-    let storedAdGroups = [];
-    for (const campaign of campaigns) {
-      const groups = await AdGroup.findByCampaignId(campaign.id);
-      storedAdGroups.push(...groups);
-    }
-    
-    res.json({ adGroups: storedAdGroups });
-  } catch (error) {
-    console.error('Get ad groups error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch ad groups', details: error.response?.data });
-  }
-};
-
-// Get keywords and store in database
-exports.getKeywords = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    
-    let userId = user.id.toString();
-    if (user.role === ROLES.MASTER && req.query.brandId) {
-      userId = req.query.brandId;
-    }
-
-    const campaigns = await Campaign.findByUserId(userId);
-    let storedKeywords = [];
-    for (const campaign of campaigns) {
-      const kws = await Keyword.findByCampaignId(campaign.id);
-      storedKeywords.push(...kws);
-    }
-    
-    res.json({ keywords: storedKeywords });
-  } catch (error) {
-    console.error('Get keywords error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch keywords', details: error.response?.data });
-  }
-};
-
-// Get audiences
-exports.getAudiences = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    
-    if (user.role === ROLES.USER) {
-      return res.status(403).json({ error: 'Read-only access. Cannot fetch audiences.' });
-    }
-
-    const audiences = await makeAdsApiRequest(user, '/v2/stores/audiences');
-    res.json({ audiences });
-  } catch (error) {
-    console.error('Get audiences error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch audiences', details: error.response?.data });
-  }
-};
-
-// Get campaign metrics from database
-exports.getCampaignMetrics = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    
-    let userId = user.id.toString();
-    if (user.role === ROLES.MASTER && req.query.brandId) {
-      userId = req.query.brandId;
-    }
-
-    const summary = await Campaign.getMetricsSummary(userId);
-    res.json({ metrics: summary });
-  } catch (error) {
-    console.error('Get metrics error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to fetch metrics', details: error.response?.data });
-  }
-};
-
-// Automate data synchronization - ADMIN and MASTER only
-exports.automateSync = async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    
-    const [profiles, campaigns, adGroups, keywords] = await Promise.all([
-      makeAdsApiRequest(user, '/v2/profiles'),
-      makeAdsApiRequest(user, '/v2/sp/campaigns'),
-      makeAdsApiRequest(user, '/v2/sp/adGroups'),
-      makeAdsApiRequest(user, '/v2/sp/keywords')
-    ]);
-
-    let syncedCounts = {
-      profiles: profiles.length,
-      campaigns: 0,
-      adGroups: 0,
-      keywords: 0
-    };
-
-    for (const campaign of campaigns) {
-      await Campaign.upsert({
-        id: uuidv4(),
-        userId: user.id.toString(),
-        platformId: campaign.campaignId.toString(),
-        name: campaign.name,
-        state: campaign.state,
-        targetingType: campaign.targetingType,
-        budget: campaign.budget,
-        budgetType: campaign.budgetType,
-        startDate: campaign.startDate,
-        endDate: campaign.endDate,
-        premiumBidAdjustment: campaign.premiumBidAdjustment || false,
-        impressions: 0,
-        clicks: 0,
-        spend: 0,
-        sales: 0,
-        orders: 0
-      });
-      syncedCounts.campaigns++;
-    }
-
-    for (const adGroup of adGroups) {
-      const campaign = await Campaign.findByPlatformId(adGroup.campaignId.toString());
-      if (campaign) {
-        await AdGroup.upsert({
-          id: uuidv4(),
-          campaignId: campaign.id,
-          platformId: adGroup.adGroupId.toString(),
-          name: adGroup.name,
-          state: adGroup.state,
-          defaultBid: adGroup.defaultBid,
-          impressions: 0,
-          clicks: 0,
-          spend: 0,
-          sales: 0,
-          orders: 0
-        });
-        syncedCounts.adGroups++;
-      }
-    }
-
-    for (const keyword of keywords) {
-      const campaign = await Campaign.findByPlatformId(keyword.campaignId.toString());
-      if (campaign) {
-        await Keyword.upsert({
-          id: uuidv4(),
-          campaignId: campaign.id,
-          adGroupId: null,
-          platformId: keyword.keywordId.toString(),
-          keywordText: keyword.keywordText,
-          matchType: keyword.matchType,
-          state: keyword.state,
-          bid: keyword.bid,
-          impressions: 0,
-          clicks: 0,
-          spend: 0,
-          sales: 0,
-          orders: 0
-        });
-        syncedCounts.keywords++;
-      }
-    }
-
-    await User.updateLastSync(user.id);
-
-    res.json({
-      success: true,
-      data: syncedCounts,
-      lastSync: new Date()
-    });
-  } catch (error) {
-    console.error('Automate sync error:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Failed to sync data', details: error.response?.data });
+    console.error('❌ [PROFILE] Error:', error.response?.data || error.message);
+    throw new Error('Failed to fetch advertising profile');
   }
 };
 
 // Get dashboard summary
 exports.getDashboard = async (req, res) => {
   try {
+    console.log('\n📊 [DASHBOARD] Loading dashboard for user:', req.userId);
+    
     const user = await User.findById(req.userId);
-    
-    // MASTER gets special dashboard
-    if (user.role === ROLES.MASTER) {
-      return exports.getMasterDashboard(req, res);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
-    
-    const [campaigns, metrics, alerts] = await Promise.all([
-      Campaign.findByUserId(user.id.toString()),
-      Campaign.getMetricsSummary(user.id.toString()),
-      Alert.findByUserId(user.id.toString(), false)
-    ]);
 
+    // Get metrics from database
+    const metrics = await Campaign.getMetricsSummary(user.id);
+    
+    console.log('✅ [DASHBOARD] Dashboard loaded');
     res.json({
-      user: await User.getPublicProfile(user.id),
-      campaigns: campaigns.slice(0, 5),
-      metrics,
-      unreadAlerts: alerts.length
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        marketplace: user.marketplace,
+        last_sync: user.last_sync
+      },
+      metrics: metrics || {
+        total_campaigns: 0,
+        total_impressions: 0,
+        total_clicks: 0,
+        total_spend: 0,
+        total_sales: 0,
+        total_orders: 0,
+        avg_acos: 0,
+        avg_roas: 0
+      }
     });
   } catch (error) {
-    console.error('Get dashboard error:', error.message);
-    res.status(500).json({ error: 'Failed to fetch dashboard data' });
+    console.error('❌ [DASHBOARD] Error:', error);
+    res.status(500).json({ error: 'Failed to load dashboard' });
+  }
+};
+
+// Get campaigns
+exports.getCampaigns = async (req, res) => {
+  try {
+    console.log('\n📊 [CAMPAIGNS] Fetching campaigns for user:', req.userId);
+    
+    const campaigns = await Campaign.findByUserId(req.userId);
+    
+    console.log(`✅ [CAMPAIGNS] Found ${campaigns.length} campaigns`);
+    res.json({ campaigns });
+  } catch (error) {
+    console.error('❌ [CAMPAIGNS] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch campaigns' });
+  }
+};
+
+// Get ad groups
+exports.getAdGroups = async (req, res) => {
+  try {
+    console.log('\n📁 [AD_GROUPS] Fetching ad groups for user:', req.userId);
+    
+    const adGroups = await AdGroup.findByUserId(req.userId);
+    
+    console.log(`✅ [AD_GROUPS] Found ${adGroups.length} ad groups`);
+    res.json({ adGroups });
+  } catch (error) {
+    console.error('❌ [AD_GROUPS] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch ad groups' });
+  }
+};
+
+// Get keywords
+exports.getKeywords = async (req, res) => {
+  try {
+    console.log('\n🔑 [KEYWORDS] Fetching keywords for user:', req.userId);
+    
+    const keywords = await Keyword.findByUserId(req.userId);
+    
+    console.log(`✅ [KEYWORDS] Found ${keywords.length} keywords`);
+    res.json({ keywords });
+  } catch (error) {
+    console.error('❌ [KEYWORDS] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch keywords' });
   }
 };
 
 // Get alerts
 exports.getAlerts = async (req, res) => {
   try {
-    const alerts = await Alert.findByUserId(req.userId.toString());
-    const unreadCount = await Alert.getUnreadCount(req.userId.toString());
+    console.log('\n🔔 [ALERTS] Fetching alerts for user:', req.userId);
     
+    const alerts = await Alert.findByUserId(req.userId);
+    const unreadCount = alerts.filter(a => !a.isRead).length;
+    
+    console.log(`✅ [ALERTS] Found ${alerts.length} alerts (${unreadCount} unread)`);
     res.json({ alerts, unreadCount });
   } catch (error) {
-    console.error('Get alerts error:', error.message);
+    console.error('❌ [ALERTS] Error:', error);
     res.status(500).json({ error: 'Failed to fetch alerts' });
   }
 };
 
-// Mark alert as read
-exports.markAlertRead = async (req, res) => {
+// Auto-sync from Amazon Ads API
+exports.automateSync = async (req, res) => {
   try {
-    const { id } = req.params;
-    const alert = await Alert.markAsRead(id);
+    console.log('\n🔄 [SYNC] Starting automated sync for user:', req.userId);
     
-    res.json({ alert });
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Get valid access token
+    const accessToken = await getValidAccessToken(user);
+    
+    // Get marketplace config
+    const config = MARKETPLACE_CONFIG[user.marketplace];
+    if (!config) {
+      throw new Error('Invalid marketplace configuration');
+    }
+
+    // Get advertising profile
+    const profile = await getAdvertisingProfile(accessToken, config.adsEndpoint);
+    
+    // Update user's profile ID
+    if (profile && profile.profileId) {
+      await User.updateProfileId(user.id, profile.profileId.toString());
+      console.log('✅ [SYNC] Profile ID updated:', profile.profileId);
+    }
+
+    let syncedData = {
+      campaigns: 0,
+      adGroups: 0,
+      keywords: 0
+    };
+
+    // Sync Campaigns
+    console.log('\n📊 [SYNC] Syncing campaigns...');
+    try {
+      const campaignsResponse = await axios.get(`${config.adsEndpoint}/v2/sp/campaigns`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': process.env.LWA_CLIENT_ID,
+          'Amazon-Advertising-API-Scope': profile.profileId,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const campaigns = campaignsResponse.data;
+      console.log(`✅ [SYNC] Fetched ${campaigns.length} campaigns from Amazon`);
+
+      for (const campaign of campaigns) {
+        await Campaign.upsert({
+          userId: user.id,
+          platformId: campaign.campaignId.toString(),
+          name: campaign.name,
+          state: campaign.state,
+          budget: campaign.budget || 0,
+          budgetType: campaign.budgetType || 'daily',
+          startDate: campaign.startDate ? new Date(campaign.startDate) : new Date()
+        });
+        syncedData.campaigns++;
+      }
+    } catch (error) {
+      console.error('⚠️ [SYNC] Campaign sync error:', error.response?.data || error.message);
+    }
+
+    // Sync Ad Groups
+    console.log('\n📁 [SYNC] Syncing ad groups...');
+    try {
+      const adGroupsResponse = await axios.get(`${config.adsEndpoint}/v2/sp/adGroups`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': process.env.LWA_CLIENT_ID,
+          'Amazon-Advertising-API-Scope': profile.profileId,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const adGroups = adGroupsResponse.data;
+      console.log(`✅ [SYNC] Fetched ${adGroups.length} ad groups from Amazon`);
+
+      for (const adGroup of adGroups) {
+        // Find corresponding campaign in our database
+        const campaign = await Campaign.findByPlatformId(adGroup.campaignId.toString());
+        if (campaign) {
+          await AdGroup.upsert({
+            userId: user.id,
+            campaignId: campaign.id,
+            platformId: adGroup.adGroupId.toString(),
+            name: adGroup.name,
+            state: adGroup.state,
+            defaultBid: adGroup.defaultBid || 0
+          });
+          syncedData.adGroups++;
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ [SYNC] Ad group sync error:', error.response?.data || error.message);
+    }
+
+    // Sync Keywords
+    console.log('\n🔑 [SYNC] Syncing keywords...');
+    try {
+      const keywordsResponse = await axios.get(`${config.adsEndpoint}/v2/sp/keywords`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Amazon-Advertising-API-ClientId': process.env.LWA_CLIENT_ID,
+          'Amazon-Advertising-API-Scope': profile.profileId,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const keywords = keywordsResponse.data;
+      console.log(`✅ [SYNC] Fetched ${keywords.length} keywords from Amazon`);
+
+      for (const keyword of keywords) {
+        const campaign = await Campaign.findByPlatformId(keyword.campaignId.toString());
+        if (campaign) {
+          await Keyword.upsert({
+            userId: user.id,
+            campaignId: campaign.id,
+            platformId: keyword.keywordId.toString(),
+            keywordText: keyword.keywordText,
+            matchType: keyword.matchType,
+            state: keyword.state,
+            bid: keyword.bid || 0
+          });
+          syncedData.keywords++;
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ [SYNC] Keyword sync error:', error.response?.data || error.message);
+    }
+
+    // Update last sync timestamp
+    await User.updateLastSync(user.id);
+
+    console.log('\n✅ [SYNC] Sync completed successfully!');
+    console.log(`   📊 Campaigns: ${syncedData.campaigns}`);
+    console.log(`   📁 Ad Groups: ${syncedData.adGroups}`);
+    console.log(`   🔑 Keywords: ${syncedData.keywords}`);
+
+    res.json({
+      success: true,
+      message: 'Data synced successfully',
+      data: syncedData
+    });
+
   } catch (error) {
-    console.error('Mark alert read error:', error.message);
-    res.status(500).json({ error: 'Failed to mark alert as read' });
+    console.error('❌ [SYNC] Sync failed:', error.message);
+    res.status(500).json({ 
+      error: error.message || 'Failed to sync data',
+      details: error.response?.data
+    });
+  }
+};
+
+// Get audiences
+exports.getAudiences = async (req, res) => {
+  try {
+    console.log('\n👥 [AUDIENCES] Fetching audiences...');
+    
+    // Audiences require special API access
+    // For now, return empty array or fetch from database if stored
+    res.json({ 
+      audiences: [],
+      message: 'Audiences API requires additional permissions'
+    });
+  } catch (error) {
+    console.error('❌ [AUDIENCES] Error:', error);
+    res.status(500).json({ error: 'Failed to fetch audiences' });
   }
 };
