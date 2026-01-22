@@ -1,190 +1,162 @@
-# 🚀 Amazon Ads Automation Platform
+# Amazon Ads Automation Platform
 
-A comprehensive multi-tenant Amazon Advertising automation platform with real-time data sync, campaign management, and performance analytics.
+🚀 Full-stack application for automating Amazon Advertising campaigns with real-time analytics and optimization.
 
-## ✨ Features
+## Features
 
-### 🔐 Authentication
-- Email/Password registration and login
-- JWT-based authentication
-- Amazon OAuth 2.0 integration
-- Secure password hashing with bcrypt
+- 📊 Real-time Performance Metrics
+- 🤖 Automated Campaign Management
+- 💰 Budget Optimization
+- 🎯 Keyword Bid Automation
+- 📈 Advanced Analytics Dashboard
+- 🔔 Smart Alerts & Notifications
+- 🌍 Multi-Marketplace Support (NA, EU, FE)
+- 🔒 Enterprise-Grade Security
 
-### 📊 Dashboard
-- Real-time metrics overview (Impressions, Clicks, Spend, Sales, ACOS, ROAS)
-- Campaign performance tracking
-- Ad group analytics
-- Keyword performance monitoring
-- Alert notifications
+## Tech Stack
 
-### 🔄 Data Synchronization
-- Automated Amazon Ads API sync
-- Real-time campaign data
-- Keyword performance metrics
-- Ad group statistics
-- Automatic token refresh
+**Frontend:**
+- HTML5, CSS3, JavaScript
+- Modern UI with animations
+- Responsive design
 
-### 👤 User Management
-- Profile management
-- Password changes
-- Amazon account connection/disconnection
-- Account deletion
-
-### 🗄️ Database
-- Neon PostgreSQL (serverless)
-- Automatic migrations
-- Data persistence
-- Multi-tenant support
-
-## 🛠️ Tech Stack
-
-### Backend
+**Backend:**
 - Node.js + Express
 - PostgreSQL (Neon)
 - JWT Authentication
 - Amazon Advertising API
-- Axios for HTTP requests
 
-### Frontend
-- Vanilla JavaScript
-- HTML5/CSS3
-- Responsive design
-- Modern gradient UI
+## Setup Instructions
 
-### Deployment
-- Vercel (Frontend + Serverless Functions)
-- Neon PostgreSQL (Database)
+### 1. Database Setup (Neon)
 
-## 📋 Prerequisites
-
-- Node.js 16+
-- Neon PostgreSQL account
-- Amazon Seller Central account
-- Amazon Advertising API access
-
-## 🚀 Quick Start
-
-### 1. Clone Repository
-```bash
-git clone https://github.com/rakshit782/amazon-ads-lwa-auth.git
-cd amazon-ads-lwa-auth
-```
-
-### 2. Install Dependencies
-```bash
-cd backend
-npm install
-```
-
-### 3. Configure Environment
-```bash
-cp .env.example .env
-# Edit .env with your credentials
-```
-
-### 4. Run Migrations
-```bash
-npm run migrate
-```
-
-### 5. Start Development Server
-```bash
-npm run dev
-```
-
-### 6. Open Frontend
-```
-http://localhost:5500/login.html
-```
-
-## 📖 Documentation
-
-- [Setup Guide](SETUP_GUIDE.md) - Complete setup instructions
-- [Deployment Guide](DEPLOYMENT.md) - Deploy to Vercel
-- [API Documentation](docs/API.md) - API endpoints (coming soon)
-
-## 🧪 Testing
+1. Create a Neon account at [neon.tech](https://neon.tech)
+2. Create a new project
+3. Copy your connection string
+4. Run the migration:
 
 ```bash
-# Test database connection
-npm run test:db
+# Connect to your Neon database
+psql "your_neon_connection_string"
 
-# Test environment variables
-npm run test:env
-
-# Generate mock data (for testing)
-npm run db:mock
+# Run the migration
+\i database/migrations/001_add_password_role.sql
 ```
 
-## 📊 Database Schema
+### 2. Amazon Advertising API Setup
 
-- **users** - User accounts and Amazon tokens
-- **campaigns** - Campaign data and metrics
-- **ad_groups** - Ad group information
-- **keywords** - Keyword performance data
-- **alerts** - User notifications
-- **accounts** - Multi-tenant account management
-- **optimization_rules** - Automation rules (coming soon)
+1. Go to [Amazon Advertising API](https://advertising.amazon.com/API/docs/en-us/get-started/overview)
+2. Register for API access
+3. Create a LWA Security Profile
+4. Get your Client ID and Client Secret
+5. Add redirect URL: `https://your-domain.vercel.app/api/auth/callback`
 
-## 🔑 Environment Variables
+### 3. Environment Variables
+
+Create a `.env` file or add to Vercel:
 
 ```env
-DATABASE_URL=postgresql://...
-LWA_CLIENT_ID=amzn1.application-oa2-client.xxxxx
-LWA_CLIENT_SECRET=your_secret
-JWT_SECRET=your_jwt_secret
-REDIRECT_URI=http://localhost:3000/api/auth/callback
-FRONTEND_URL=http://localhost:5500
+DATABASE_URL=your_neon_connection_string
+LWA_CLIENT_ID=your_amazon_client_id
+LWA_CLIENT_SECRET=your_amazon_client_secret
+JWT_SECRET=your_random_32_char_string
+REDIRECT_URI=https://your-domain.vercel.app/api/auth/callback
+FRONTEND_URL=https://your-domain.vercel.app
+AMAZON_ADS_API_SCOPE=advertising::campaign_management advertising::audiences
+NODE_ENV=production
 ```
 
-## 🚀 Deployment
+### 4. Generate JWT Secret
 
-Deploy to Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/rakshit782/amazon-ads-lwa-auth)
-
-Or manually:
 ```bash
-vercel --prod
+openssl rand -base64 32
 ```
 
-## 📝 API Endpoints
+### 5. Deploy to Vercel
+
+1. Push code to GitHub
+2. Import project in Vercel
+3. Add environment variables
+4. Deploy!
+
+## Database Schema
+
+### Users Table
+```sql
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  password TEXT,
+  role VARCHAR(20) DEFAULT 'ADMIN',
+  marketplace VARCHAR(10) NOT NULL,
+  region VARCHAR(10) NOT NULL,
+  refresh_token TEXT,
+  access_token TEXT,
+  token_expiry TIMESTAMP,
+  profile_id VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW(),
+  last_sync TIMESTAMP
+);
+```
+
+## API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `GET /api/auth/profile` - Get user profile
+- `POST /api/auth/register` - Register with email/password (ADMIN role)
+- `POST /api/auth/login` - Login with email/password
 - `POST /api/auth/get-auth-url` - Get Amazon OAuth URL
-- `POST /api/auth/exchange-token` - Exchange OAuth code
+- `GET /api/auth/callback` - Amazon OAuth callback
+- `POST /api/auth/exchange-token` - Exchange code for tokens
 
-### Data
-- `GET /api/ads/dashboard` - Dashboard metrics
-- `GET /api/ads/campaigns` - List campaigns
-- `GET /api/ads/ad-groups` - List ad groups
-- `GET /api/ads/keywords` - List keywords
-- `GET /api/ads/alerts` - List alerts
-- `POST /api/ads/automate-sync` - Sync from Amazon
+### Protected Routes (require JWT)
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/update-profile` - Update profile
+- `PUT /api/auth/change-password` - Change password
+- `POST /api/auth/disconnect-amazon` - Disconnect Amazon
+- `DELETE /api/auth/delete-account` - Delete account
+- `POST /api/auth/refresh-token` - Refresh access token
 
-## 🤝 Contributing
+## Default User Role
 
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+All registered users are assigned **ADMIN** role by default, giving them full access to:
+- Campaign management
+- Analytics dashboard
+- Automation rules
+- All platform features
 
-## 📄 License
+## Usage
 
-MIT License - see [LICENSE](LICENSE) for details
+### Option 1: Email/Password Registration
+1. Visit your app URL
+2. Click "Sign Up" tab
+3. Fill in name, email, password, marketplace
+4. You're registered as ADMIN!
 
-## 🆘 Support
+### Option 2: Amazon OAuth
+1. Visit your app URL
+2. Click "Connect with Amazon"
+3. Fill in name, email, marketplace
+4. Authorize with Amazon
+5. You're registered as ADMIN!
 
-For issues or questions:
-- Open an issue on GitHub
-- Email: support@example.com
+## Development
 
-## 🙏 Acknowledgments
+```bash
+# Install dependencies
+npm install
 
-- Amazon Advertising API
-- Neon PostgreSQL
-- Vercel Platform
+# Run locally
+cd backend
+node server.js
+```
 
----
+## License
 
-**Made with ❤️ for Amazon Sellers**
+MIT
+
+## Support
+
+For issues or questions, please open a GitHub issue.

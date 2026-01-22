@@ -1,238 +1,187 @@
-const { query } = require('../config/database');
+const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 
-// User Roles
-const ROLES = {
-  MASTER: 'MASTER',   // Owner - sees all brands and data
-  ADMIN: 'ADMIN',     // Brand owner - manages their own ad accounts
-  USER: 'USER'        // Read-only - views data only
-};
-
 class User {
-  // Find user by ID
-  static async findById(id) {
-    const result = await query('SELECT * FROM users WHERE id = $1', [id]);
-    return result.rows[0] || null;
-  }
-
   // Find user by email
   static async findByEmail(email) {
-    const result = await query('SELECT * FROM users WHERE email = $1', [email]);
-    return result.rows[0] || null;
+    try {
+      const query = 'SELECT * FROM users WHERE email = $1';
+      const result = await pool.query(query, [email]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.findByEmail] Error:', error);
+      throw error;
+    }
+  }
+
+  // Find user by ID
+  static async findById(id) {
+    try {
+      const query = 'SELECT * FROM users WHERE id = $1';
+      const result = await pool.query(query, [id]);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.findById] Error:', error);
+      throw error;
+    }
   }
 
   // Create new user
   static async create(userData) {
-    const {
-      email,
-      name,
-      password,
-      role = ROLES.USER, // Default role
-      marketplace,
-      region,
-      refreshToken,
-      accessToken,
-      tokenExpiry
-    } = userData;
+    try {
+      const { email, password, name, marketplace, region, refreshToken, accessToken, tokenExpiry } = userData;
+      
+      // Hash password if provided
+      let hashedPassword = null;
+      if (password) {
+        hashedPassword = await bcrypt.hash(password, 10);
+      }
 
-    // Hash password if provided
-    const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+      const query = `
+        INSERT INTO users (
+          email, name, password, role, marketplace, region, 
+          refresh_token, access_token, token_expiry, 
+          is_active, created_at, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING *
+      `;
 
-    const result = await query(
-      `INSERT INTO users (
-        email, name, password, role, marketplace, region, 
-        refresh_token, access_token, token_expiry, 
-        is_active, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      RETURNING *`,
-      [
+      const values = [
         email,
         name,
         hashedPassword,
-        role,
+        'ADMIN', // Default role is ADMIN
         marketplace,
         region,
-        refreshToken,
-        accessToken,
-        tokenExpiry
-      ]
-    );
+        refreshToken || null,
+        accessToken || null,
+        tokenExpiry || null,
+        true, // is_active
+        new Date(),
+        new Date()
+      ];
 
-    return result.rows[0];
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.create] Error:', error);
+      throw error;
+    }
   }
 
-  // Update tokens
+  // Update user tokens (for Amazon OAuth)
   static async updateTokens(email, refreshToken, accessToken, tokenExpiry) {
-    const result = await query(
-      `UPDATE users 
-       SET refresh_token = $1, access_token = $2, token_expiry = $3, updated_at = CURRENT_TIMESTAMP
-       WHERE email = $4
-       RETURNING *`,
-      [refreshToken, accessToken, tokenExpiry, email]
-    );
-
-    return result.rows[0];
+    try {
+      const query = `
+        UPDATE users 
+        SET refresh_token = $1, access_token = $2, token_expiry = $3, updated_at = $4
+        WHERE email = $5
+        RETURNING *
+      `;
+      const values = [refreshToken, accessToken, tokenExpiry, new Date(), email];
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.updateTokens] Error:', error);
+      throw error;
+    }
   }
 
-  // Update access token only
-  static async updateAccessToken(id, accessToken, tokenExpiry) {
-    const result = await query(
-      `UPDATE users 
-       SET access_token = $1, token_expiry = $2, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3
-       RETURNING *`,
-      [accessToken, tokenExpiry, id]
-    );
-
-    return result.rows[0];
-  }
-
-  // Update profile ID
-  static async updateProfileId(id, profileId) {
-    const result = await query(
-      'UPDATE users SET profile_id = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [profileId, id]
-    );
-
-    return result.rows[0];
-  }
-
-  // Update last sync timestamp
-  static async updateLastSync(id) {
-    const result = await query(
-      'UPDATE users SET last_sync = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
-      [id]
-    );
-
-    return result.rows[0];
+  // Update access token
+  static async updateAccessToken(userId, accessToken, tokenExpiry) {
+    try {
+      const query = `
+        UPDATE users 
+        SET access_token = $1, token_expiry = $2, updated_at = $3
+        WHERE id = $4
+        RETURNING *
+      `;
+      const values = [accessToken, tokenExpiry, new Date(), userId];
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.updateAccessToken] Error:', error);
+      throw error;
+    }
   }
 
   // Update profile
-  static async updateProfile(id, updates) {
-    const { name } = updates;
-    const result = await query(
-      'UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [name, id]
-    );
-    return result.rows[0];
+  static async updateProfile(userId, { name }) {
+    try {
+      const query = `
+        UPDATE users 
+        SET name = $1, updated_at = $2
+        WHERE id = $3
+        RETURNING *
+      `;
+      const values = [name, new Date(), userId];
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.updateProfile] Error:', error);
+      throw error;
+    }
   }
 
-  // Get public profile (without sensitive data)
-  static async getPublicProfile(id) {
-    const result = await query(
-      `SELECT id, email, name, role, marketplace, region, profile_id, 
-              is_active, last_sync, created_at 
-       FROM users WHERE id = $1`,
-      [id]
-    );
-
-    return result.rows[0];
+  // Update password
+  static async updatePassword(userId, newPassword) {
+    try {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const query = `
+        UPDATE users 
+        SET password = $1, updated_at = $2
+        WHERE id = $3
+        RETURNING *
+      `;
+      const values = [hashedPassword, new Date(), userId];
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.updatePassword] Error:', error);
+      throw error;
+    }
   }
 
   // Verify password
   static async verifyPassword(plainPassword, hashedPassword) {
-    if (!hashedPassword) return false;
-    return await bcrypt.compare(plainPassword, hashedPassword);
-  }
-
-  // Update password
-  static async updatePassword(id, newPassword) {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const result = await query(
-      'UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [hashedPassword, id]
-    );
-    return result.rows[0];
-  }
-
-  // Disconnect Amazon account
-  static async disconnectAmazon(id) {
-    const result = await query(
-      `UPDATE users 
-       SET refresh_token = NULL, access_token = NULL, token_expiry = NULL, profile_id = NULL, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $1 
-       RETURNING *`,
-      [id]
-    );
-    return result.rows[0];
-  }
-
-  // Delete account (soft delete - set inactive)
-  static async deleteAccount(id) {
-    const result = await query(
-      'UPDATE users SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *',
-      [id]
-    );
-    return result.rows[0];
-  }
-
-  // Update role (MASTER only)
-  static async updateRole(id, newRole) {
-    if (!Object.values(ROLES).includes(newRole)) {
-      throw new Error('Invalid role');
+    try {
+      return await bcrypt.compare(plainPassword, hashedPassword);
+    } catch (error) {
+      console.error('❌ [User.verifyPassword] Error:', error);
+      throw error;
     }
-    
-    const result = await query(
-      'UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [newRole, id]
-    );
-    return result.rows[0];
   }
 
-  // Get all users (MASTER only)
-  static async getAll() {
-    const result = await query(
-      `SELECT id, email, name, role, marketplace, is_active, last_sync, created_at 
-       FROM users 
-       ORDER BY created_at DESC`
-    );
-    return result.rows;
+  // Disconnect Amazon
+  static async disconnectAmazon(userId) {
+    try {
+      const query = `
+        UPDATE users 
+        SET refresh_token = NULL, access_token = NULL, token_expiry = NULL, profile_id = NULL, updated_at = $1
+        WHERE id = $2
+        RETURNING *
+      `;
+      const values = [new Date(), userId];
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('❌ [User.disconnectAmazon] Error:', error);
+      throw error;
+    }
   }
 
-  // Get users by role
-  static async getByRole(role) {
-    const result = await query(
-      `SELECT id, email, name, role, marketplace, is_active, last_sync, created_at 
-       FROM users 
-       WHERE role = $1
-       ORDER BY created_at DESC`,
-      [role]
-    );
-    return result.rows;
-  }
-
-  // Activate/Deactivate user
-  static async setActiveStatus(id, isActive) {
-    const result = await query(
-      'UPDATE users SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
-      [isActive, id]
-    );
-    return result.rows[0];
-  }
-
-  // Check if user has permission
-  static hasPermission(userRole, requiredRole) {
-    const hierarchy = {
-      MASTER: 3,
-      ADMIN: 2,
-      USER: 1
-    };
-    
-    return hierarchy[userRole] >= hierarchy[requiredRole];
-  }
-
-  // Check if user can modify resource
-  static canModify(userRole, resourceOwnerId, userId) {
-    // MASTER can modify anything
-    if (userRole === ROLES.MASTER) return true;
-    
-    // ADMIN can only modify their own resources
-    if (userRole === ROLES.ADMIN && resourceOwnerId === userId) return true;
-    
-    // USER cannot modify anything
-    return false;
+  // Delete account
+  static async deleteAccount(userId) {
+    try {
+      const query = 'DELETE FROM users WHERE id = $1';
+      await pool.query(query, [userId]);
+      return true;
+    } catch (error) {
+      console.error('❌ [User.deleteAccount] Error:', error);
+      throw error;
+    }
   }
 }
 
 module.exports = User;
-module.exports.ROLES = ROLES;
