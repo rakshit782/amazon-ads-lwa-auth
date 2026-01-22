@@ -8,7 +8,7 @@ const generateJWT = (userId, role) => {
 };
 
 // Login with email and password
-exports.login = async (req, res) => {
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -56,7 +56,7 @@ exports.login = async (req, res) => {
 };
 
 // Register new user (MASTER only can create ADMIN/USER)
-exports.register = async (req, res) => {
+const register = async (req, res) => {
   try {
     const { email, name, password, role, brandName } = req.body;
 
@@ -102,7 +102,7 @@ exports.register = async (req, res) => {
 };
 
 // Get all users (MASTER only)
-exports.getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
     const users = await User.getAll();
     res.json({ users });
@@ -113,7 +113,7 @@ exports.getAllUsers = async (req, res) => {
 };
 
 // Get users by role
-exports.getUsersByRole = async (req, res) => {
+const getUsersByRole = async (req, res) => {
   try {
     const { role } = req.params;
     
@@ -130,7 +130,7 @@ exports.getUsersByRole = async (req, res) => {
 };
 
 // Update user role (MASTER only)
-exports.updateUserRole = async (req, res) => {
+const updateUserRole = async (req, res) => {
   try {
     const { userId } = req.params;
     const { role } = req.body;
@@ -158,7 +158,7 @@ exports.updateUserRole = async (req, res) => {
 };
 
 // Activate/Deactivate user (MASTER only)
-exports.toggleUserStatus = async (req, res) => {
+const toggleUserStatus = async (req, res) => {
   try {
     const { userId } = req.params;
     const { isActive } = req.body;
@@ -181,7 +181,7 @@ exports.toggleUserStatus = async (req, res) => {
 };
 
 // Change password
-exports.changePassword = async (req, res) => {
+const changePassword = async (req, res) => {
   try {
     const { oldPassword, newPassword } = req.body;
 
@@ -205,4 +205,14 @@ exports.changePassword = async (req, res) => {
     console.error('Change password error:', error);
     res.status(500).json({ error: 'Failed to change password' });
   }
+};
+
+module.exports = {
+  login,
+  register,
+  getAllUsers,
+  getUsersByRole,
+  updateUserRole,
+  toggleUserStatus,
+  changePassword
 };
