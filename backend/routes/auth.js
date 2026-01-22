@@ -14,6 +14,10 @@ router.post('/exchange-token', authController.exchangeToken);
 
 // Protected Routes
 router.get('/profile', authenticateToken, authController.getProfile);
+router.put('/update-profile', authenticateToken, authController.updateProfile);
+router.put('/change-password', authenticateToken, authController.changePassword);
+router.post('/disconnect-amazon', authenticateToken, authController.disconnectAmazon);
+router.delete('/delete-account', authenticateToken, authController.deleteAccount);
 router.post('/refresh-token', authenticateToken, authController.refreshAccessToken);
 
 module.exports = router;

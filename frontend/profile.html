@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Amazon Ads Automation</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .profile-container { max-width: 800px; margin: 40px auto; }
+        .profile-section { margin-bottom: 30px; }
+        .profile-field { margin-bottom: 20px; }
+        .profile-field label { display: block; font-weight: 600; margin-bottom: 8px; }
+        .profile-field input { width: 100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 6px; }
+        .profile-field input:disabled { background: var(--light-bg); }
+        .profile-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .connection-status { padding: 15px; background: var(--light-bg); border-radius: 8px; margin-top: 15px; }
+        .connection-status.connected { background: #d4edda; border-left: 4px solid var(--success-color); }
+        .connection-status.disconnected { background: #f8d7da; border-left: 4px solid var(--danger-color); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="profile-container">
+            <div class="card">
+                <div class="dashboard-header">
+                    <div>
+                        <h1>👤 User Profile</h1>
+                        <p class="subtitle">Manage your account settings</p>
+                    </div>
+                    <div class="header-actions">
+                        <button onclick="window.location.href='dashboard.html'" class="btn-secondary">🏠 Dashboard</button>
+                        <button id="logoutBtn" class="btn-secondary">🚪 Logout</button>
+                    </div>
+                </div>
+
+                <!-- Account Information -->
+                <div class="profile-section">
+                    <h2>📋 Account Information</h2>
+                    <form id="profileForm">
+                        <div class="profile-field">
+                            <label>Full Name</label>
+                            <input type="text" id="userName" placeholder="Your name">
+                        </div>
+                        <div class="profile-field">
+                            <label>Email</label>
+                            <input type="email" id="userEmail" disabled>
+                        </div>
+                        <div class="profile-field">
+                            <label>Marketplace</label>
+                            <input type="text" id="userMarketplace" disabled>
+                        </div>
+                        <div class="profile-field">
+                            <label>Member Since</label>
+                            <input type="text" id="memberSince" disabled>
+                        </div>
+                        <div class="profile-actions">
+                            <button type="submit" class="btn-primary">💾 Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Amazon Connection Status -->
+                <div class="profile-section">
+                    <h2>🔗 Amazon Connection</h2>
+                    <div id="connectionStatus" class="connection-status"></div>
+                    <div class="profile-actions">
+                        <button id="connectAmazonBtn" class="btn-primary" style="display: none;">🛒 Connect Amazon Account</button>
+                        <button id="disconnectAmazonBtn" class="btn-secondary" style="display: none;">🔌 Disconnect Amazon</button>
+                    </div>
+                </div>
+
+                <!-- Change Password -->
+                <div class="profile-section">
+                    <h2>🔐 Change Password</h2>
+                    <form id="passwordForm">
+                        <div class="profile-field">
+                            <label>Current Password</label>
+                            <input type="password" id="currentPassword" placeholder="Enter current password" required>
+                        </div>
+                        <div class="profile-field">
+                            <label>New Password</label>
+                            <input type="password" id="newPassword" placeholder="Min 6 characters" required minlength="6">
+                        </div>
+                        <div class="profile-field">
+                            <label>Confirm New Password</label>
+                            <input type="password" id="confirmPassword" placeholder="Confirm new password" required>
+                        </div>
+                        <div class="profile-actions">
+                            <button type="submit" class="btn-primary">🔑 Update Password</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="profile-section">
+                    <h2>⚠️ Danger Zone</h2>
+                    <p style="color: var(--text-light); margin-bottom: 15px;">Once you delete your account, there is no going back. Please be certain.</p>
+                    <button id="deleteAccountBtn" class="btn-secondary" style="background: var(--danger-color); color: white;">🗑️ Delete Account</button>
+                </div>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                <div id="successMessage" class="success-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/profile.js"></script>
+</body>
+</html>
