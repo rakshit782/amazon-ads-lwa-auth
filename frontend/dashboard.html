@@ -278,6 +278,12 @@
             box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
         }
 
+        .btn-primary:disabled {
+            background: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Alert */
         .alert {
             padding: 16px 20px;
@@ -297,6 +303,12 @@
             background: #fff3e0;
             border-color: #ff9800;
             color: #e65100;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
         }
 
         @media (max-width: 768px) {
@@ -350,6 +362,9 @@
         <div class="alert alert-info" id="connection-alert" style="display: none;">
             <strong>Welcome!</strong> Connect your Amazon account to start managing campaigns.
         </div>
+
+        <!-- Error Alert -->
+        <div class="alert alert-warning" id="error-alert" style="display: none;"></div>
 
         <!-- Stats Grid -->
         <div class="stats-grid">
@@ -433,9 +448,47 @@
             window.location.href = '/index.html';
         });
 
-        // Connect Amazon
-        document.getElementById('connect-amazon-btn').addEventListener('click', () => {
-            window.location.href = '/amazon-connect.html';
+        // Connect Amazon - Generate auth URL and redirect
+        document.getElementById('connect-amazon-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('connect-amazon-btn');
+            const errorAlert = document.getElementById('error-alert');
+            
+            try {
+                btn.disabled = true;
+                btn.textContent = 'Connecting...';
+                errorAlert.style.display = 'none';
+
+                // Get auth URL from backend using logged-in user's info
+                const response = await fetch(`${API_URL}/api/auth/get-auth-url`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        email: user.email,
+                        name: user.name,
+                        marketplace: user.marketplace || 'NA',
+                        organizationName: user.organizationName
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate authorization URL');
+                }
+
+                // Redirect to Amazon OAuth
+                window.location.href = data.authUrl;
+
+            } catch (error) {
+                console.error('Connection error:', error);
+                errorAlert.textContent = error.message;
+                errorAlert.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Connect Amazon Account';
+            }
         });
 
         // Load dashboard data (placeholder)
