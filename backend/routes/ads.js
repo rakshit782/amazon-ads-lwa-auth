@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const adsController = require('../controllers/adsController');
-const authMiddleware = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const { requireWrite, allowRead, requireRole, ROLES } = require('../middleware/roleCheck');
 
 // All routes require authentication
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 // MASTER Dashboard - see all brands data
 router.get('/master/dashboard', requireRole(ROLES.MASTER), adsController.getMasterDashboard);
