@@ -3,89 +3,589 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amazon Ads Automation Platform</title>
+    <title>Amazon Ads Automation - Login</title>
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .auth-wrapper {
+            max-width: 480px;
+            width: 100%;
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .auth-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .auth-header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            padding: 15px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-tab:hover {
+            color: #667eea;
+        }
+        
+        .auth-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .auth-form {
+            display: none;
+        }
+        
+        .auth-form.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 45px;
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2rem;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        
+        .password-toggle:hover {
+            color: #667eea;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 100%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .divider span {
+            background: white;
+            padding: 0 20px;
+            position: relative;
+            color: #999;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .amazon-login-btn {
+            background: #ff9900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .amazon-login-btn:hover {
+            background: #e88b00;
+            box-shadow: 0 10px 25px rgba(255, 153, 0, 0.4);
+        }
+        
+        .error-message,
+        .success-message {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin: 20px 0;
+            animation: slideDown 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        
+        .success-message {
+            background: #dff0d8;
+            color: #3c763d;
+            border: 1px solid #d6e9c6;
+        }
+        
+        .loading-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 30px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .helper-text {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .helper-text a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .helper-text a:hover {
+            text-decoration: underline;
+        }
+        
+        .feature-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 25px 0;
+            justify-content: center;
+        }
+        
+        .badge {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 30px 20px;
+            }
+            
+            .auth-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Login Section -->
-        <div id="loginSection" class="section">
-            <div class="card">
-                <h1>🚀 Amazon Ads Automation</h1>
-                <p class="subtitle">Connect your Amazon Advertising account</p>
-                
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label for="name">Your Name</label>
-                        <input type="text" id="name" required placeholder="Enter your name">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" required placeholder="Enter your email">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="marketplace">Select Marketplace</label>
-                        <select id="marketplace" required>
-                            <option value="">Choose marketplace...</option>
-                            <option value="NA">🇺🇸 North America (US, CA, MX)</option>
-                            <option value="EU">🇪🇺 Europe (UK, DE, FR, IT, ES)</option>
-                            <option value="FE">🌏 Far East (JP, AU, IN, SG)</option>
-                        </select>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary" id="lwaButton">
-                        <img src="https://m.media-amazon.com/images/G/01/lwa/btnLWA_gold_156x32.png" alt="Login with Amazon">
-                    </button>
-                </form>
-                
-                <div id="loadingMessage" class="loading-message" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Connecting to Amazon...</p>
+    <div class="auth-wrapper">
+        <!-- Header -->
+        <div class="auth-header">
+            <h1>🚀 Amazon Ads Automation</h1>
+            <p>Automate and optimize your Amazon advertising campaigns</p>
+        </div>
+
+        <!-- Auth Card -->
+        <div class="auth-card">
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Register</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <div class="form-group">
+                    <label for="loginEmail">📧 Email Address</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com" required autocomplete="email">
                 </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">🔒 Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+                    <span class="password-toggle" onclick="togglePassword('loginPassword')">👁️</span>
+                </div>
+                
+                <button type="submit" class="btn-primary">
+                    <span>🔓</span>
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="registerName">👤 Full Name</label>
+                    <input type="text" id="registerName" placeholder="John Doe" required autocomplete="name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerEmail">📧 Email Address</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com" required autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerPassword">🔒 Password</label>
+                    <input type="password" id="registerPassword" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password">
+                    <span class="password-toggle" onclick="togglePassword('registerPassword')">👁️</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerMarketplace">🌍 Primary Marketplace</label>
+                    <select id="registerMarketplace" required>
+                        <option value="">Select your marketplace</option>
+                        <option value="NA">🇺🇸 North America (US, CA, MX)</option>
+                        <option value="EU">🇪🇺 Europe (UK, DE, FR, IT, ES)</option>
+                        <option value="FE">🌏 Far East (JP, AU, IN, SG)</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-primary">
+                    <span>✨</span>
+                    <span>Create Account</span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">
+                <span>OR CONNECT WITH</span>
+            </div>
+
+            <!-- Amazon Login Button -->
+            <button class="btn-primary amazon-login-btn" id="amazonLoginBtn">
+                <span>🛒</span>
+                <span>Continue with Amazon</span>
+            </button>
+
+            <!-- Feature Badges -->
+            <div class="feature-badges">
+                <div class="badge">🔒 Secure</div>
+                <div class="badge">⚡ Fast</div>
+                <div class="badge">📊 Analytics</div>
+                <div class="badge">🤖 Automation</div>
+            </div>
+
+            <!-- Messages -->
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="successMessage" class="success-message" style="display: none;"></div>
+            <div id="loadingMessage" class="loading-message" style="display: none;">
+                <div class="spinner"></div>
+                <p>Processing...</p>
             </div>
         </div>
 
-        <!-- Dashboard Section -->
-        <div id="dashboardSection" class="section" style="display: none;">
-            <div class="card">
-                <div class="dashboard-header">
-                    <h1>📊 Amazon Ads Dashboard</h1>
-                    <div class="header-actions">
-                        <button id="autoSyncBtn" class="btn-primary">🔄 Auto Sync</button>
-                        <button id="logoutBtn" class="btn-secondary">Logout</button>
-                    </div>
-                </div>
-                
-                <div id="userInfo" class="user-info"></div>
-                
-                <!-- Metrics Summary -->
-                <div id="metricsSection" class="metrics-section"></div>
-                
-                <!-- Tabs -->
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="campaigns">🎯 Campaigns</button>
-                    <button class="tab-btn" data-tab="adgroups">📋 Ad Groups</button>
-                    <button class="tab-btn" data-tab="keywords">🔑 Keywords</button>
-                    <button class="tab-btn" data-tab="audiences">👥 Audiences</button>
-                    <button class="tab-btn" data-tab="alerts">🔔 Alerts</button>
-                </div>
-                
-                <!-- Tab Content -->
-                <div id="tabContent" class="tab-content">
-                    <div id="dataDisplay" class="data-display"></div>
-                </div>
-            </div>
+        <!-- Helper Text -->
+        <div class="helper-text">
+            <p style="color: white; margin-top: 20px;">
+                Need help? <a href="mailto:support@amazonads.com" style="color: white;">Contact Support</a>
+            </p>
         </div>
-        
-        <!-- Error Display -->
-        <div id="errorMessage" class="error-message" style="display: none;"></div>
-        <!-- Success Display -->
-        <div id="successMessage" class="success-message" style="display: none;"></div>
     </div>
 
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api' 
+            : '/api';
+
+        // Tab Switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update tabs
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tabName}Form`).classList.add('active');
+                
+                // Clear messages
+                hideMessages();
+            });
+        });
+
+        // Toggle Password Visibility
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            input.type = input.type === 'password' ? 'text' : 'password';
+        }
+
+        // Message Functions
+        function showError(message) {
+            hideMessages();
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.textContent = message;
+            errorMsg.style.display = 'block';
+            setTimeout(() => errorMsg.style.display = 'none', 5000);
+        }
+
+        function showSuccess(message) {
+            hideMessages();
+            const successMsg = document.getElementById('successMessage');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            setTimeout(() => successMsg.style.display = 'none', 3000);
+        }
+
+        function showLoading() {
+            hideMessages();
+            document.getElementById('loadingMessage').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingMessage').style.display = 'none';
+        }
+
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'none';
+        }
+
+        // Login Handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Login failed');
+                }
+                
+                // Save auth data
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                showSuccess('✅ Login successful! Redirecting...');
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+                
+            } catch (error) {
+                showError('❌ ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Register Handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const marketplace = document.getElementById('registerMarketplace').value;
+            
+            if (!name || !email || !password || !marketplace) {
+                showError('Please fill in all fields');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, marketplace })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+                
+                // Save auth data
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                showSuccess('✅ Account created! Redirecting to dashboard...');
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+                
+            } catch (error) {
+                showError('❌ ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Amazon Login Handler
+        document.getElementById('amazonLoginBtn').addEventListener('click', () => {
+            window.location.href = 'amazon-connect.html';
+        });
+
+        // Check if already logged in
+        if (localStorage.getItem('authToken')) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
 </body>
 </html>
