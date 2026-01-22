@@ -6,6 +6,9 @@ const authMiddleware = require('../middleware/auth');
 // All routes require authentication
 router.use(authMiddleware);
 
+// Dashboard
+router.get('/dashboard', adsController.getDashboard);
+
 // Get profiles
 router.get('/profiles', adsController.getProfiles);
 
@@ -26,5 +29,9 @@ router.get('/campaigns/metrics', adsController.getCampaignMetrics);
 
 // Automate data fetch
 router.post('/automate-sync', adsController.automateSync);
+
+// Alerts
+router.get('/alerts', adsController.getAlerts);
+router.put('/alerts/:id/read', adsController.markAlertRead);
 
 module.exports = router;
