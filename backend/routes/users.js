@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 const { requireRole, ROLES } = require('../middleware/roleCheck');
 
 // Public routes
 router.post('/login', userController.login);
 
 // Protected routes - require authentication
-router.use(authMiddleware);
+router.use(authenticateToken);
 
 // MASTER only routes
 router.post('/register', requireRole(ROLES.MASTER), userController.register);
