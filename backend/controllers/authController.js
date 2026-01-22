@@ -43,7 +43,7 @@ const generateJWT = (userId) => {
 // ==================== EMAIL/PASSWORD AUTHENTICATION ====================
 
 // Register new user
-exports.register = async (req, res) => {
+const register = async (req, res) => {
   try {
     console.log('\n📝 [REGISTER] New user registration...');
     const { email, password, name, marketplace = 'NA', role: requestedRole, organizationName } = req.body;
@@ -116,7 +116,7 @@ exports.register = async (req, res) => {
 };
 
 // Login
-exports.login = async (req, res) => {
+const login = async (req, res) => {
   try {
     console.log('\n🔐 [LOGIN] User login attempt...');
     const { email, password } = req.body;
@@ -172,7 +172,7 @@ exports.login = async (req, res) => {
 };
 
 // Get profile
-exports.getProfile = async (req, res) => {
+const getProfile = async (req, res) => {
   try {
     console.log('\n👤 [PROFILE] Getting user profile for ID:', req.userId);
     const user = await User.findById(req.userId);
@@ -206,7 +206,7 @@ exports.getProfile = async (req, res) => {
 };
 
 // Update profile
-exports.updateProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
   try {
     const { name, organizationName } = req.body;
     
@@ -223,7 +223,7 @@ exports.updateProfile = async (req, res) => {
 };
 
 // Change password
-exports.changePassword = async (req, res) => {
+const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     
@@ -247,7 +247,7 @@ exports.changePassword = async (req, res) => {
 };
 
 // Disconnect Amazon
-exports.disconnectAmazon = async (req, res) => {
+const disconnectAmazon = async (req, res) => {
   try {
     await User.disconnectAmazon(req.userId);
     res.json({ success: true, message: 'Amazon account disconnected' });
@@ -258,7 +258,7 @@ exports.disconnectAmazon = async (req, res) => {
 };
 
 // Delete account
-exports.deleteAccount = async (req, res) => {
+const deleteAccount = async (req, res) => {
   try {
     const user = await User.findById(req.userId);
     
@@ -280,7 +280,7 @@ exports.deleteAccount = async (req, res) => {
 // ==================== AMAZON OAUTH ====================
 
 // Generate Amazon authorization URL
-exports.getAuthUrl = async (req, res) => {
+const getAuthUrl = async (req, res) => {
   try {
     console.log('\n📝 [AUTH] Generating authorization URL...');
     const { email, name, marketplace = 'NA', organizationName } = req.body;
@@ -319,7 +319,7 @@ exports.getAuthUrl = async (req, res) => {
 };
 
 // Handle OAuth callback
-exports.handleCallback = async (req, res) => {
+const handleCallback = async (req, res) => {
   try {
     console.log('\n📥 [CALLBACK] OAuth callback received');
     const { code, state } = req.query;
@@ -342,7 +342,7 @@ exports.handleCallback = async (req, res) => {
 };
 
 // Exchange authorization code for tokens
-exports.exchangeToken = async (req, res) => {
+const exchangeToken = async (req, res) => {
   try {
     console.log('\n🔄 [EXCHANGE] Starting token exchange...');
     const { code, state } = req.body;
@@ -427,7 +427,7 @@ exports.exchangeToken = async (req, res) => {
 };
 
 // Refresh access token
-exports.refreshAccessToken = async (req, res) => {
+const refreshAccessToken = async (req, res) => {
   try {
     console.log('\n🔄 [REFRESH] Starting token refresh...');
     const user = await User.findById(req.userId);
@@ -468,15 +468,15 @@ exports.refreshAccessToken = async (req, res) => {
 };
 
 module.exports = {
-  register: exports.register,
-  login: exports.login,
-  getProfile: exports.getProfile,
-  updateProfile: exports.updateProfile,
-  changePassword: exports.changePassword,
-  disconnectAmazon: exports.disconnectAmazon,
-  deleteAccount: exports.deleteAccount,
-  getAuthUrl: exports.getAuthUrl,
-  handleCallback: exports.handleCallback,
-  exchangeToken: exports.exchangeToken,
-  refreshAccessToken: exports.refreshAccessToken
+  register,
+  login,
+  getProfile,
+  updateProfile,
+  changePassword,
+  disconnectAmazon,
+  deleteAccount,
+  getAuthUrl,
+  handleCallback,
+  exchangeToken,
+  refreshAccessToken
 };
